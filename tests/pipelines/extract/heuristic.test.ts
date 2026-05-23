@@ -4,9 +4,7 @@ import {
   extractConceptsFromPath,
   extractSymbols,
   capConcepts,
-  extractHeuristic,
 } from "../../../src/pipelines/extract/heuristic";
-import type { NormalizedEvent, ClassifyResult } from "../../../src/types";
 
 describe("normalizeConcept", () => {
   test("splits camelCase", () => {

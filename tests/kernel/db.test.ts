@@ -1,5 +1,5 @@
 import { describe, test, expect, afterEach } from "bun:test";
-import { tmpDir, tmpDb, cleanupDb } from "../../src/test/helpers";
+import { tmpDir, cleanupDb } from "../../src/test/helpers";
 import { openDb, withRetry } from "../../src/kernel/db";
 import { Database } from "bun:sqlite";
 

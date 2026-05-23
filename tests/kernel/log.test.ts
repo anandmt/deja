@@ -1,9 +1,9 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { createLogger, rotateOldLogs } from "../../src/kernel/log";
-import type { LogLevel } from "../../src/types";
+
 
 describe("createLogger", () => {
   let logsDir: string;

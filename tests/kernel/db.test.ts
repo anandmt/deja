@@ -17,6 +17,13 @@ describe("openDb", () => {
     expect(result.journal_mode).toBe("wal");
   });
 
+  test("sets busy_timeout to 5000ms", () => {
+    const dir = tmpDir();
+    db = openDb(`${dir}/timeout-test.db`);
+    const result = db.query("PRAGMA busy_timeout").get() as { timeout: number };
+    expect(result.timeout).toBe(5000);
+  });
+
   test("creates database file if it does not exist", () => {
     const dir = tmpDir();
     const dbPath = `${dir}/new.db`;

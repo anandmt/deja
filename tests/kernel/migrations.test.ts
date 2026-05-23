@@ -82,6 +82,24 @@ describe("runMigrations", () => {
     expect(fts[0].content).toBe("Changed function foo");
   });
 
+  test("FTS trigger updates on observation update", () => {
+    db = tmpDb();
+    runMigrations(db);
+    db.exec(`INSERT INTO sessions (id, project, started_at_epoch) VALUES ('s1', '/test', 1000)`);
+    db.exec(`INSERT INTO observations (session_id, project, significance, kind, title, content, raw_event, created_at_epoch)
+      VALUES ('s1', '/test', 'medium', 'file_edit', 'Modified foo()', 'Changed function foo', '{}', 1000)`);
+    db.exec(`UPDATE observations SET title = 'Modified bar()', content = 'Changed function bar' WHERE id = 1`);
+    const oldFts = db.query(
+      "SELECT * FROM observations_fts WHERE observations_fts MATCH 'foo'"
+    ).all();
+    expect(oldFts.length).toBe(0);
+    const newFts = db.query(
+      "SELECT * FROM observations_fts WHERE observations_fts MATCH 'bar'"
+    ).all() as Array<{ title: string; content: string }>;
+    expect(newFts.length).toBe(1);
+    expect(newFts[0].title).toBe("Modified bar()");
+  });
+
   test("FTS trigger deletes on observation delete", () => {
     db = tmpDb();
     runMigrations(db);

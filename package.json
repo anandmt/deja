@@ -1,0 +1,27 @@
+{
+  "name": "deja",
+  "version": "0.1.0",
+  "description": "Zero-config persistent memory for Claude Code",
+  "type": "module",
+  "main": "dist/worker/main.js",
+  "bin": {
+    "deja": "dist/cli/main.js"
+  },
+  "scripts": {
+    "build": "bun build src/worker/main.ts --outdir dist/worker --target bun && bun build src/cli/main.ts --outdir dist/cli --target bun",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "bun x tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "bun": ">=1.3.6"
+  },
+  "license": "MIT"
+}

@@ -101,3 +101,16 @@ export interface StatRow {
   metric: string;
   value: number;
 }
+
+export interface ClassifyResult {
+  significance: Significance;
+  rule: string;
+}
+
+export interface ClassifyInput {
+  payload: HookPayload;
+  recentCommands: Set<string>;
+  seenWritePaths: Set<string>;
+  settings: Pick<Settings, "excluded_projects">;
+  batch?: BatchAnnotation;
+}

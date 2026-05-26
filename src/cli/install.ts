@@ -32,7 +32,8 @@ function getHooksJson(): object {
 }
 
 function getMcpEntry(): { command: string; args: string[] } {
-  const serverScript = resolveFile(import.meta.dir, "..", "mcp", "server");
+  const dejaRoot = resolve(import.meta.dir, "..", "..");
+  const serverScript = resolve(dejaRoot, "dist", "mcp", "server.js");
   return { command: "bun", args: ["run", serverScript] };
 }
 

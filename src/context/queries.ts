@@ -23,6 +23,17 @@ export interface CrossProjectRow extends ObservationRow {
   shared_concepts: number;
 }
 
+export interface ProjectStats {
+  observations: number;
+  sessions: number;
+}
+
+export function getProjectStats(db: Database, project: string): ProjectStats {
+  const obs = (db.prepare("SELECT COUNT(*) as c FROM observations WHERE project = ?").get(project) as { c: number }).c;
+  const sess = (db.prepare("SELECT COUNT(*) as c FROM sessions WHERE project = ?").get(project) as { c: number }).c;
+  return { observations: obs, sessions: sess };
+}
+
 export function getLastSessionSummary(
   db: Database,
   project: string,

@@ -1,4 +1,6 @@
-import type { SessionSummaryRow, ObservationRow, CrossProjectRow } from "./queries";
+import type { SessionSummaryRow, ObservationRow, CrossProjectRow, ProjectStats } from "./queries";
+
+const DASHBOARD_PORT = 19533;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -90,11 +92,25 @@ export function formatContextBlock(
   sessionSection: string,
   observationsSection: string,
   crossProjectSection: string,
+  stats?: ProjectStats,
 ): string {
   const body = sessionSection + observationsSection + crossProjectSection;
-  if (!body.trim()) return "";
+
+  if (!stats) {
+    if (!body.trim()) return "";
+    const footer = "\nUse deja_search/deja_timeline/deja_observe MCP tools for deeper memory access.\n";
+    return `<system-reminder>\n# deja — project memory for ${project}\n\n${body}${footer}</system-reminder>`;
+  }
+
+  const statusLine = stats.observations === 0
+    ? "First session — capturing observations for next time."
+    : `${stats.observations} observations across ${stats.sessions} sessions`;
+  const dashboard = `Dashboard: http://localhost:${DASHBOARD_PORT}`;
+
+  if (!body.trim()) {
+    return `<system-reminder>\n# deja — project memory for ${project}\n${statusLine} | ${dashboard}\n</system-reminder>`;
+  }
 
   const footer = "\nUse deja_search/deja_timeline/deja_observe MCP tools for deeper memory access.\n";
-
-  return `<system-reminder>\n# deja — project memory for ${project}\n\n${body}${footer}</system-reminder>`;
+  return `<system-reminder>\n# deja — project memory for ${project}\n${statusLine} | ${dashboard}\n\n${body}${footer}</system-reminder>`;
 }

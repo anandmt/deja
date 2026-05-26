@@ -29,11 +29,13 @@ describe("generateContext", () => {
   let db: Database;
   afterEach(() => { if (db) cleanupDb(db); });
 
-  test("returns empty string on empty database", () => {
+  test("returns status line on empty database (first session)", () => {
     db = tmpDb();
     runMigrations(db);
     const result = generateContext(db, "/project", "s1", DEFAULT_SETTINGS);
-    expect(result).toBe("");
+    expect(result).toContain("First session");
+    expect(result).toContain("Dashboard: http://localhost:19533");
+    expect(result).toContain("system-reminder");
   });
 
   test("includes last session summary", () => {

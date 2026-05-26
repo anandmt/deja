@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 import type { Settings } from "../types";
-import { getLastSessionSummary, getTopObservations, getCrossProjectInsights } from "./queries";
+import { getLastSessionSummary, getTopObservations, getCrossProjectInsights, getProjectStats } from "./queries";
 import { formatSessionSection, formatObservationsSection, formatCrossProjectSection, formatContextBlock } from "./format";
 
 export function generateContext(
@@ -9,8 +9,14 @@ export function generateContext(
   _sessionId: string,
   settings: Settings,
 ): string {
+  const stats = getProjectStats(db, project);
+  const statusLine = stats.observations === 0
+    ? "First session — capturing observations for next time."
+    : `${stats.observations} observations across ${stats.sessions} sessions`;
+  const statusOverhead = `${statusLine} | Dashboard: http://localhost:19533\n\n`.length;
   const wrapperOverhead =
-    `<system-reminder>\n# deja — project memory for ${project}\n\n`.length +
+    `<system-reminder>\n# deja — project memory for ${project}\n`.length +
+    statusOverhead +
     `\nUse deja_search/deja_timeline/deja_observe MCP tools for deeper memory access.\n</system-reminder>`.length;
   const budget = Math.max(0, settings.context_budget - wrapperOverhead);
   let sessionBudget = Math.floor(budget * 0.4);
@@ -31,7 +37,7 @@ export function generateContext(
     crossSection = formatCrossProjectSection(insights, crossBudget);
   }
 
-  const result = formatContextBlock(project, sessionSection, obsSection, crossSection);
+  const result = formatContextBlock(project, sessionSection, obsSection, crossSection, stats);
 
   if (result) {
     db.prepare(

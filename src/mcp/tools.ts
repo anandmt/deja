@@ -2,7 +2,8 @@ import type { Database } from "bun:sqlite";
 import { searchFts } from "../pipelines/search/fts";
 import type { Significance, ObservationKind } from "../types";
 
-interface ToolResult {
+export interface ToolResult {
+  [x: string]: unknown;
   content: { type: "text"; text: string }[];
   isError?: boolean;
 }

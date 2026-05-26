@@ -2,7 +2,7 @@ import { describe, test, expect, afterEach } from "bun:test";
 import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
-import { install } from "../../src/cli/install";
+import { install, cleanupLegacy } from "../../src/cli/install";
 import { uninstall } from "../../src/cli/uninstall";
 
 function makeTmpDir(): string {
@@ -13,67 +13,113 @@ describe("install", () => {
   let tmpDir: string;
   afterEach(() => { if (tmpDir) rmSync(tmpDir, { recursive: true, force: true }); });
 
-  test("creates .claude dir and copies hooks", () => {
+  test("writes hooks and MCP into settings.json", () => {
     tmpDir = makeTmpDir();
     install(tmpDir);
 
-    const hooksPath = join(tmpDir, ".claude", "hooks.json");
-    expect(existsSync(hooksPath)).toBe(true);
-
-    const hooks = JSON.parse(readFileSync(hooksPath, "utf-8"));
-    expect(hooks.hooks).toBeDefined();
-    expect(hooks.hooks.SessionStart).toBeDefined();
-    expect(hooks.hooks.PostToolUse).toBeDefined();
-    expect(hooks.hooks.Stop).toBeDefined();
-  });
-
-  test("registers MCP server in settings.json", () => {
-    tmpDir = makeTmpDir();
-    install(tmpDir);
-
-    const settingsPath = join(tmpDir, ".claude", "settings.json");
+    const settingsPath = join(tmpDir, "settings.json");
     expect(existsSync(settingsPath)).toBe(true);
 
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
-    expect(settings.mcpServers).toBeDefined();
+    expect(settings.hooks).toBeDefined();
+    expect(settings.hooks.SessionStart).toBeDefined();
+    expect(settings.hooks.PostToolUse).toBeDefined();
+    expect(settings.hooks.Stop).toBeDefined();
     expect(settings.mcpServers.deja).toBeDefined();
     expect(settings.mcpServers.deja.command).toBe("bun");
   });
 
-  test("preserves existing settings.json entries", () => {
+  test("preserves existing settings entries", () => {
     tmpDir = makeTmpDir();
-    mkdirSync(join(tmpDir, ".claude"), { recursive: true });
     writeFileSync(
-      join(tmpDir, ".claude", "settings.json"),
-      JSON.stringify({ mcpServers: { other: { command: "other-tool" } }, permissions: { allow: ["Read"] } }),
+      join(tmpDir, "settings.json"),
+      JSON.stringify({
+        model: "sonnet",
+        mcpServers: { other: { command: "other-tool" } },
+        hooks: { PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "echo hi" }] }] },
+      }),
     );
 
     install(tmpDir);
 
-    const settings = JSON.parse(readFileSync(join(tmpDir, ".claude", "settings.json"), "utf-8"));
+    const settings = JSON.parse(readFileSync(join(tmpDir, "settings.json"), "utf-8"));
+    expect(settings.model).toBe("sonnet");
     expect(settings.mcpServers.other.command).toBe("other-tool");
     expect(settings.mcpServers.deja).toBeDefined();
-    expect(settings.permissions.allow).toEqual(["Read"]);
+    expect(settings.hooks.PreToolUse).toBeDefined();
+    expect(settings.hooks.SessionStart).toBeDefined();
   });
 
   test("hook commands use absolute paths", () => {
     tmpDir = makeTmpDir();
     install(tmpDir);
 
-    const hooks = JSON.parse(readFileSync(join(tmpDir, ".claude", "hooks.json"), "utf-8"));
-    const cmd = hooks.hooks.SessionStart[0].hooks[0].command as string;
+    const settings = JSON.parse(readFileSync(join(tmpDir, "settings.json"), "utf-8"));
+    const cmd = settings.hooks.SessionStart[0].hooks[0].command as string;
     expect(cmd).not.toContain("./dist");
     expect(cmd).toContain("/dist/hooks/session-start.js");
     expect(cmd.startsWith("bun /")).toBe(true);
   });
 
-  test("is idempotent — running twice doesn't break anything", () => {
+  test("is idempotent", () => {
     tmpDir = makeTmpDir();
     install(tmpDir);
     install(tmpDir);
 
-    const hooks = JSON.parse(readFileSync(join(tmpDir, ".claude", "hooks.json"), "utf-8"));
-    expect(hooks.hooks.SessionStart).toBeDefined();
+    const settings = JSON.parse(readFileSync(join(tmpDir, "settings.json"), "utf-8"));
+    expect(settings.hooks.SessionStart).toHaveLength(1);
+  });
+});
+
+describe("cleanupLegacy", () => {
+  let tmpDir: string;
+  afterEach(() => { if (tmpDir) rmSync(tmpDir, { recursive: true, force: true }); });
+
+  test("removes legacy hooks.json from project", () => {
+    tmpDir = makeTmpDir();
+    mkdirSync(join(tmpDir, ".claude"), { recursive: true });
+    writeFileSync(join(tmpDir, ".claude", "hooks.json"), "{}");
+
+    cleanupLegacy(tmpDir);
+
+    expect(existsSync(join(tmpDir, ".claude", "hooks.json"))).toBe(false);
+  });
+
+  test("removes deja entries from project settings.json", () => {
+    tmpDir = makeTmpDir();
+    mkdirSync(join(tmpDir, ".claude"), { recursive: true });
+    writeFileSync(
+      join(tmpDir, ".claude", "settings.json"),
+      JSON.stringify({
+        hooks: { SessionStart: [] },
+        mcpServers: { deja: { command: "bun" }, other: { command: "x" } },
+      }),
+    );
+
+    cleanupLegacy(tmpDir);
+
+    const settings = JSON.parse(readFileSync(join(tmpDir, ".claude", "settings.json"), "utf-8"));
+    expect(settings.hooks).toBeUndefined();
+    expect(settings.mcpServers.deja).toBeUndefined();
+    expect(settings.mcpServers.other.command).toBe("x");
+  });
+
+  test("deletes empty project settings.json", () => {
+    tmpDir = makeTmpDir();
+    mkdirSync(join(tmpDir, ".claude"), { recursive: true });
+    writeFileSync(
+      join(tmpDir, ".claude", "settings.json"),
+      JSON.stringify({ mcpServers: { deja: { command: "bun" } } }),
+    );
+
+    cleanupLegacy(tmpDir);
+
+    expect(existsSync(join(tmpDir, ".claude", "settings.json"))).toBe(false);
+  });
+
+  test("is safe when no .claude dir exists", () => {
+    tmpDir = makeTmpDir();
+    expect(() => cleanupLegacy(tmpDir)).not.toThrow();
   });
 });
 
@@ -81,31 +127,46 @@ describe("uninstall", () => {
   let tmpDir: string;
   afterEach(() => { if (tmpDir) rmSync(tmpDir, { recursive: true, force: true }); });
 
-  test("removes hooks.json", () => {
+  test("removes deja hooks and MCP from settings", () => {
     tmpDir = makeTmpDir();
     install(tmpDir);
-    expect(existsSync(join(tmpDir, ".claude", "hooks.json"))).toBe(true);
+
+    const before = JSON.parse(readFileSync(join(tmpDir, "settings.json"), "utf-8"));
+    expect(before.hooks).toBeDefined();
+    expect(before.mcpServers.deja).toBeDefined();
 
     uninstall(tmpDir);
-    expect(existsSync(join(tmpDir, ".claude", "hooks.json"))).toBe(false);
+
+    const after = JSON.parse(readFileSync(join(tmpDir, "settings.json"), "utf-8"));
+    expect(after.hooks).toBeUndefined();
+    expect(after.mcpServers).toBeUndefined();
   });
 
-  test("removes deja from MCP settings but preserves others", () => {
+  test("preserves non-deja hooks and MCP entries", () => {
     tmpDir = makeTmpDir();
-    mkdirSync(join(tmpDir, ".claude"), { recursive: true });
     writeFileSync(
-      join(tmpDir, ".claude", "settings.json"),
-      JSON.stringify({ mcpServers: { deja: { command: "bun" }, other: { command: "other" } } }),
+      join(tmpDir, "settings.json"),
+      JSON.stringify({
+        hooks: {
+          SessionStart: [{ hooks: [{ type: "command", command: "deja" }] }],
+          PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "lint" }] }],
+        },
+        mcpServers: { deja: { command: "bun" }, other: { command: "other" } },
+        model: "opus",
+      }),
     );
 
     uninstall(tmpDir);
 
-    const settings = JSON.parse(readFileSync(join(tmpDir, ".claude", "settings.json"), "utf-8"));
-    expect(settings.mcpServers.deja).toBeUndefined();
+    const settings = JSON.parse(readFileSync(join(tmpDir, "settings.json"), "utf-8"));
+    expect(settings.hooks.PreToolUse).toBeDefined();
+    expect(settings.hooks.SessionStart).toBeUndefined();
     expect(settings.mcpServers.other.command).toBe("other");
+    expect(settings.mcpServers.deja).toBeUndefined();
+    expect(settings.model).toBe("opus");
   });
 
-  test("is safe to run when not installed", () => {
+  test("is safe when settings.json doesn't exist", () => {
     tmpDir = makeTmpDir();
     expect(() => uninstall(tmpDir)).not.toThrow();
   });

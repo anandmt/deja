@@ -1,15 +1,8 @@
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
+import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "fs";
 import { join, resolve } from "path";
+import { homedir } from "os";
 
-function resolveFile(base: string, ...segments: string[]): string {
-  const tsPath = resolve(base, ...segments) + ".ts";
-  if (existsSync(tsPath)) return tsPath;
-  const jsPath = resolve(base, ...segments) + ".js";
-  if (existsSync(jsPath)) return jsPath;
-  return tsPath;
-}
-
-function getHooksJson(): object {
+function getHooksConfig(): Record<string, unknown> {
   const dejaRoot = resolve(import.meta.dir, "..", "..");
   const hooksPath = resolve(dejaRoot, "hooks.json");
   const config = JSON.parse(readFileSync(hooksPath, "utf-8"));
@@ -28,7 +21,7 @@ function getHooksJson(): object {
     }
   }
 
-  return config;
+  return config.hooks;
 }
 
 function getMcpEntry(): { command: string; args: string[] } {
@@ -37,12 +30,9 @@ function getMcpEntry(): { command: string; args: string[] } {
   return { command: "bun", args: ["run", serverScript] };
 }
 
-export function install(projectDir: string): void {
-  const claudeDir = join(projectDir, ".claude");
+export function install(overrideClaudeDir?: string): void {
+  const claudeDir = overrideClaudeDir ?? join(homedir(), ".claude");
   mkdirSync(claudeDir, { recursive: true });
-
-  const hooksPath = join(claudeDir, "hooks.json");
-  writeFileSync(hooksPath, JSON.stringify(getHooksJson(), null, 2) + "\n");
 
   const settingsPath = join(claudeDir, "settings.json");
   let settings: Record<string, any> = {};
@@ -52,8 +42,40 @@ export function install(projectDir: string): void {
     } catch {}
   }
 
+  if (!settings.hooks) settings.hooks = {};
+  const hooks = getHooksConfig();
+  for (const [event, matchers] of Object.entries(hooks)) {
+    settings.hooks[event] = matchers;
+  }
+
   if (!settings.mcpServers) settings.mcpServers = {};
   settings.mcpServers.deja = getMcpEntry();
 
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
+}
+
+export function cleanupLegacy(projectDir: string): void {
+  const claudeDir = join(projectDir, ".claude");
+
+  const legacyHooksPath = join(claudeDir, "hooks.json");
+  if (existsSync(legacyHooksPath)) {
+    rmSync(legacyHooksPath);
+  }
+
+  const settingsPath = join(claudeDir, "settings.json");
+  if (!existsSync(settingsPath)) return;
+  try {
+    const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+    let changed = false;
+    if (settings.hooks) { delete settings.hooks; changed = true; }
+    if (settings.mcpServers?.deja) { delete settings.mcpServers.deja; changed = true; }
+    if (changed) {
+      if (Object.keys(settings.mcpServers ?? {}).length === 0) delete settings.mcpServers;
+      if (Object.keys(settings).length === 0) {
+        rmSync(settingsPath);
+      } else {
+        writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
+      }
+    }
+  } catch {}
 }

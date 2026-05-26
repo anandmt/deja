@@ -1,4 +1,4 @@
-import { install } from "./install";
+import { install, cleanupLegacy } from "./install";
 import { uninstall } from "./uninstall";
 import { cliSearch } from "./search";
 import { cliStats } from "./stats";
@@ -15,8 +15,8 @@ function usage(): void {
 Usage: deja <command> [options]
 
 Commands:
-  install              Install hooks and MCP server in current project
-  uninstall            Remove hooks and MCP server from current project
+  install              Install hooks and MCP server globally (~/.claude/settings.json)
+  uninstall            Remove hooks and MCP server from global settings
   search <query>       Search observations by keyword
     --project <path>   Filter by project path (default: cwd)
     --significance <s> Filter: low | medium | high | critical
@@ -36,16 +36,15 @@ function getFlag(flag: string): string | undefined {
 
 switch (command) {
   case "install": {
-    const projectDir = getFlag("--project") ?? process.cwd();
-    install(projectDir);
-    console.log(`deja installed in ${projectDir}`);
+    install();
+    cleanupLegacy(process.cwd());
+    console.log("deja installed globally (~/.claude/settings.json)");
     break;
   }
 
   case "uninstall": {
-    const projectDir = getFlag("--project") ?? process.cwd();
-    uninstall(projectDir);
-    console.log(`deja uninstalled from ${projectDir}`);
+    uninstall();
+    console.log("deja uninstalled from global settings");
     break;
   }
 

@@ -1,8 +1,28 @@
-# deja
+<p align="center">
+  <h1 align="center">deja</h1>
+  <p align="center">
+    <strong>Claude Code forgets everything between sessions. deja fixes that.</strong>
+  </p>
+</p>
 
-Zero-config persistent memory for Claude Code.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@anandt/deja"><img src="https://img.shields.io/npm/v/@anandt/deja.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@anandt/deja"><img src="https://img.shields.io/npm/dm/@anandt/deja.svg" alt="monthly downloads"></a>
+  <a href="https://github.com/anandmt/deja/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@anandt/deja.svg" alt="license"></a>
+</p>
 
-deja captures file reads, edits, shell commands, and decisions via Claude Code hooks. It compresses them locally and injects relevant context into future sessions. Everything lives in a single SQLite file with no external services.
+<p align="center">
+  Automatic persistent memory for Claude Code.<br>
+  Zero config. 100% local. No API keys.
+</p>
+
+---
+
+## The problem
+
+Every time you start a new Claude Code session, it starts from scratch. The architectural decisions you made yesterday? Gone. The bug you spent an hour debugging? Forgotten. The coding conventions you established? You'll explain them again.
+
+**deja gives Claude a memory.** It silently observes your sessions — files touched, commands run, decisions made — and feeds the most relevant context back at the start of every new session. No configuration. No cloud. Just continuity.
 
 ## Install
 
@@ -11,26 +31,58 @@ npm install -g @anandt/deja
 deja install
 ```
 
-Bun is installed automatically if not already present.
+That's it. Bun is auto-installed if missing. Start a new Claude Code session and you'll see:
 
-> **Quick try:** `npx @anandt/deja install` works but hook paths may break when npx clears its cache. Use global install for permanent setup.
+```
++- d e j a ---------------------------------+
+|                                            |
+|  > 142 memories :: 12 sessions :: 3h ago   |
+|  > Dashboard :: http://localhost:19533      |
+|                                            |
++--------------------------------------------+
+```
+
+## What Claude remembers
+
+Every session, deja quietly captures:
+
+- **Files you touched** — reads, edits, and writes with full context
+- **Commands you ran** — shell commands and their output
+- **Decisions you made** — architectural choices, trade-offs, and reasoning
+- **Session summaries** — compressed snapshots of what happened
+
+Next session, the most relevant memories are automatically injected. Claude picks up where you left off.
 
 ## How it works
 
-deja installs four Claude Code hooks and an MCP server into `~/.claude/settings.json`.
+```
+You use Claude Code normally
+        |
+  deja silently observes via hooks
+        |
+  Events are classified, compressed, and stored
+        |
+  Next session starts
+        |
+  deja injects relevant context automatically
+        |
+  Claude remembers.
+```
 
-**What it captures:**
-- Files you read, edit, and write
-- Shell commands and their output
-- Decisions and architectural context
-- Session summaries
+No manual tagging. No "save this." No commands to run. It just works.
 
-**Context injection:** At the start of each session, deja reads your memory database and injects the most relevant context — last session summary, high-significance observations, and cross-project insights.
+## In-session recall
 
-**MCP tools** for in-session use:
-- `deja_search` — keyword search across observations
-- `deja_timeline` — chronological context around a specific observation
-- `deja_observe` — full details for specific observation IDs
+Claude can search its own memory mid-session using built-in MCP tools:
+
+| Tool | What it does |
+|---|---|
+| `deja_search` | Search across all memories by keyword |
+| `deja_timeline` | See chronological context around any event |
+| `deja_observe` | Get full details for specific observations |
+
+> "What was that API endpoint I set up last week?"
+> Claude searches its memory and finds it.
 
 ## Dashboard
 
@@ -38,27 +90,29 @@ deja installs four Claude Code hooks and an MCP server into `~/.claude/settings.
 deja dashboard
 ```
 
-Opens a local dashboard at http://localhost:19533 showing observation timelines, project statistics, and session history.
+A local web dashboard at `http://localhost:19533` — browse observation timelines, project stats, and session history. Your memory, visualized.
+
+## Privacy
+
+**100% local.** Everything lives in a single SQLite file at `~/.deja/memory.db`. No cloud. No external services. No API keys. No data ever leaves your machine.
+
+Storage is efficient — roughly 250 MB per year of heavy daily use.
 
 ## Commands
 
-```
-deja install               Install hooks and MCP server
-deja uninstall             Remove hooks and MCP server
-deja search <query>        Search observations
-deja stats                 Show project statistics
-deja dashboard             Open live dashboard
-```
+| Command | Description |
+|---|---|
+| `deja install` | Install hooks and MCP server |
+| `deja uninstall` | Remove hooks and MCP server |
+| `deja search <query>` | Search your memories |
+| `deja stats` | Show project statistics |
+| `deja dashboard` | Open the local dashboard |
 
 ## Requirements
 
 - **macOS or Linux** (Windows: manual Bun install required)
 - **Bun >= 1.3.6** (auto-installed if missing)
 - **Claude Code**
-
-## Data storage
-
-All data lives in `~/.deja/memory.db` (SQLite with WAL mode). Typical storage is ~250 MB per year of heavy use. No data leaves your machine.
 
 ## License
 

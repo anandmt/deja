@@ -1,7 +1,7 @@
 {
   "name": "@anandt/deja",
-  "version": "0.1.0",
-  "description": "Zero-config persistent memory for Claude Code",
+  "version": "0.1.1",
+  "description": "Claude Code forgets everything between sessions. deja fixes that.",
   "type": "module",
   "main": "dist/worker/main.js",
   "bin": {
@@ -24,10 +24,17 @@
     "claude",
     "claude-code",
     "memory",
-    "plugin",
     "persistent-memory",
     "mcp",
-    "ai"
+    "ai",
+    "context",
+    "hooks",
+    "sqlite",
+    "local",
+    "privacy",
+    "offline",
+    "session",
+    "agent-memory"
   ],
   "repository": {
     "type": "git",

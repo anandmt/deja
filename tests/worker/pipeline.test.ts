@@ -211,7 +211,7 @@ describe("Pipeline", () => {
     expect(fts.length).toBe(1);
   });
 
-  test("skips SessionStart lifecycle events", () => {
+  test("SessionStart creates session record but no observation", () => {
     db = tmpDb();
     runMigrations(db);
     const pipeline = new Pipeline(db, DEFAULT_SETTINGS, noop);
@@ -221,8 +221,65 @@ describe("Pipeline", () => {
       defaultBatch(),
     );
 
-    const count = db.query("SELECT COUNT(*) as c FROM observations").get() as any;
-    expect(count.c).toBe(0);
+    const obsCount = db.query("SELECT COUNT(*) as c FROM observations").get() as any;
+    expect(obsCount.c).toBe(0);
+
+    const session = db.query("SELECT * FROM sessions WHERE id = 's1'").get() as any;
+    expect(session).not.toBeNull();
+    expect(session.project).toBe("/project");
+  });
+
+  test("Stop sets ended_at_epoch on session", () => {
+    db = tmpDb();
+    runMigrations(db);
+    const pipeline = new Pipeline(db, DEFAULT_SETTINGS, noop);
+
+    pipeline.processEvent(
+      { type: "SessionStart", session_id: "s1", cwd: "/project" } as HookPayload,
+      defaultBatch(),
+    );
+    pipeline.processEvent(editPayload(), defaultBatch());
+    pipeline.processEvent(
+      { type: "Stop", session_id: "test-session", cwd: "/project" } as HookPayload,
+      defaultBatch(),
+    );
+
+    const session = db.query("SELECT * FROM sessions WHERE id = 'test-session'").get() as any;
+    expect(session.ended_at_epoch).not.toBeNull();
+  });
+
+  test("Stop generates heuristic summary from observations", () => {
+    db = tmpDb();
+    runMigrations(db);
+    const pipeline = new Pipeline(db, DEFAULT_SETTINGS, noop);
+
+    pipeline.processEvent(
+      { type: "SessionStart", session_id: "s1", cwd: "/project" } as HookPayload,
+      defaultBatch(),
+    );
+    pipeline.processEvent(writePayload(), defaultBatch());
+    pipeline.processEvent(editPayload(), defaultBatch());
+    pipeline.processEvent(
+      { type: "Stop", session_id: "test-session", cwd: "/project" } as HookPayload,
+      defaultBatch(),
+    );
+
+    const session = db.query("SELECT * FROM sessions WHERE id = 'test-session'").get() as any;
+    expect(session.summary).not.toBeNull();
+    expect(session.summary.length).toBeGreaterThan(0);
+  });
+
+  test("Stop is safe when session does not exist", () => {
+    db = tmpDb();
+    runMigrations(db);
+    const pipeline = new Pipeline(db, DEFAULT_SETTINGS, noop);
+
+    expect(() => {
+      pipeline.processEvent(
+        { type: "Stop", session_id: "nonexistent", cwd: "/project" } as HookPayload,
+        defaultBatch(),
+      );
+    }).not.toThrow();
   });
 
   test("processes bash command into observation", () => {

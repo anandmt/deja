@@ -14,15 +14,19 @@ export class Pipeline {
   private recentCommands = new Set<string>();
   private seenWritePaths = new Set<string>();
 
+  private db: Database;
   private stmtEnsureSession: ReturnType<Database["prepare"]>;
   private stmtIncrementStat: ReturnType<Database["prepare"]>;
   private stmtInsertObs: ReturnType<Database["prepare"]>;
+  private stmtUpdateSessionEnd: ReturnType<Database["prepare"]>;
+  private stmtUpdateSessionSummary: ReturnType<Database["prepare"]>;
 
   constructor(
     db: Database,
     private settings: Settings,
     private log: Logger,
   ) {
+    this.db = db;
     this.stmtEnsureSession = db.prepare(
       "INSERT OR IGNORE INTO sessions (id, project, started_at_epoch) VALUES (?, ?, ?)",
     );
@@ -35,9 +39,31 @@ export class Pipeline {
         facts, concepts, files_read, files_modified, raw_event, created_at_epoch)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
+    this.stmtUpdateSessionEnd = db.prepare(
+      "UPDATE sessions SET ended_at_epoch = ? WHERE id = ?",
+    );
+    this.stmtUpdateSessionSummary = db.prepare(
+      "UPDATE sessions SET summary = ? WHERE id = ?",
+    );
   }
 
   processEvent(payload: HookPayload, batch: BatchAnnotation): void {
+    if (payload.type === "SessionStart") {
+      this.stmtEnsureSession.run(payload.session_id, payload.cwd, Date.now());
+      this.log("debug", "pipeline", `Session started: ${payload.session_id}`);
+      return;
+    }
+
+    if (payload.type === "Stop") {
+      this.stmtUpdateSessionEnd.run(Date.now(), payload.session_id);
+      const summary = this.generateHeuristicSummary(payload.session_id);
+      if (summary) {
+        this.stmtUpdateSessionSummary.run(summary, payload.session_id);
+      }
+      this.log("debug", "pipeline", `Session stopped: ${payload.session_id}`);
+      return;
+    }
+
     const input: ClassifyInput = {
       payload,
       recentCommands: this.recentCommands,
@@ -77,6 +103,33 @@ export class Pipeline {
 
     this.stmtIncrementStat.run(payload.cwd, "events_stored");
     this.log("debug", "pipeline", `Stored: ${extracted.title}`);
+  }
+
+  private generateHeuristicSummary(sessionId: string): string {
+    const rows = this.db.prepare(
+      `SELECT title, significance, kind FROM observations
+       WHERE session_id = ?
+       ORDER BY CASE significance
+         WHEN 'critical' THEN 4 WHEN 'high' THEN 3 WHEN 'medium' THEN 2 ELSE 1
+       END DESC, created_at_epoch DESC
+       LIMIT 15`,
+    ).all(sessionId) as { title: string; significance: string; kind: string }[];
+
+    if (rows.length === 0) return "";
+
+    const important = rows
+      .filter((r) => r.significance === "critical" || r.significance === "high")
+      .map((r) => r.title);
+    const other = rows
+      .filter((r) => r.significance !== "critical" && r.significance !== "high")
+      .map((r) => r.title);
+
+    const parts: string[] = [];
+    if (important.length > 0) parts.push("Worked on: " + important.join("; "));
+    if (other.length > 0) parts.push("Also: " + other.join("; "));
+
+    const summary = parts.join(". ") + ".";
+    return summary.length > 500 ? summary.slice(0, 497) + "..." : summary;
   }
 
   private trackState(payload: HookPayload): void {

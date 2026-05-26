@@ -23,7 +23,9 @@ Commands:
     --kind <k>         Filter: file_read | file_edit | file_write | bash_cmd | decision | prompt
     --limit <n>        Max results (default 20, max 50)
   stats                Show project statistics
-    --project <path>   Project path (default: cwd)`);
+    --project <path>   Project path (default: cwd)
+  dashboard            Open live dashboard in browser
+    --port <n>         Port (default: 19533)`);
 }
 
 function getFlag(flag: string): string | undefined {
@@ -73,6 +75,20 @@ switch (command) {
     const output = cliStats(db, project);
     console.log(output);
     db.close();
+    break;
+  }
+
+  case "dashboard": {
+    const port = getFlag("--port") ?? "19533";
+    process.env.DEJA_DASHBOARD_PORT = port;
+    const servePath = new URL("../dashboard/serve.ts", import.meta.url).pathname;
+    const child = Bun.spawn(["bun", "run", servePath], {
+      stdio: ["ignore", "inherit", "inherit"],
+      env: { ...process.env, DEJA_DASHBOARD_PORT: port },
+    });
+    process.on("SIGINT", () => { child.kill(); process.exit(0); });
+    process.on("SIGTERM", () => { child.kill(); process.exit(0); });
+    await child.exited;
     break;
   }
 

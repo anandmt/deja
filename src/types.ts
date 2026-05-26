@@ -114,3 +114,25 @@ export interface ClassifyInput {
   settings: Pick<Settings, "excluded_projects">;
   batch?: BatchAnnotation;
 }
+
+export interface EventMessage {
+  type: "event";
+  hook: HookType;
+  payload: HookPayload;
+}
+
+export interface RequestMessage {
+  type: "request";
+  id: string;
+  hook: HookType;
+  payload: HookPayload;
+}
+
+export interface ResponseMessage {
+  type: "response";
+  id: string;
+  status: "ok" | "error";
+  data?: unknown;
+}
+
+export type WorkerMessage = EventMessage | RequestMessage;

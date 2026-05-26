@@ -10,8 +10,25 @@ function resolveFile(base: string, ...segments: string[]): string {
 }
 
 function getHooksJson(): object {
-  const hooksPath = resolve(import.meta.dir, "..", "..", "hooks.json");
-  return JSON.parse(readFileSync(hooksPath, "utf-8"));
+  const dejaRoot = resolve(import.meta.dir, "..", "..");
+  const hooksPath = resolve(dejaRoot, "hooks.json");
+  const config = JSON.parse(readFileSync(hooksPath, "utf-8"));
+
+  const distHooks = resolve(dejaRoot, "dist", "hooks");
+  for (const matchers of Object.values(config.hooks) as any[][]) {
+    for (const matcher of matchers) {
+      for (const hook of matcher.hooks) {
+        if (hook.command) {
+          hook.command = hook.command.replace(
+            /\.\/dist\/hooks\//g,
+            distHooks + "/",
+          );
+        }
+      }
+    }
+  }
+
+  return config;
 }
 
 function getMcpEntry(): { command: string; args: string[] } {

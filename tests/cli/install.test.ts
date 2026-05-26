@@ -56,6 +56,17 @@ describe("install", () => {
     expect(settings.permissions.allow).toEqual(["Read"]);
   });
 
+  test("hook commands use absolute paths", () => {
+    tmpDir = makeTmpDir();
+    install(tmpDir);
+
+    const hooks = JSON.parse(readFileSync(join(tmpDir, ".claude", "hooks.json"), "utf-8"));
+    const cmd = hooks.hooks.SessionStart[0].hooks[0].command as string;
+    expect(cmd).not.toContain("./dist");
+    expect(cmd).toContain("/dist/hooks/session-start.js");
+    expect(cmd.startsWith("bun /")).toBe(true);
+  });
+
   test("is idempotent — running twice doesn't break anything", () => {
     tmpDir = makeTmpDir();
     install(tmpDir);

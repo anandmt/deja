@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deja — dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #0d1117; color: #c9d1d9; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 8px; color: #58a6ff; }
+  h2 { font-size: 1.1rem; margin: 24px 0 12px; color: #8b949e; border-bottom: 1px solid #21262d; padding-bottom: 6px; }
+  .meta { font-size: 0.85rem; color: #8b949e; margin-bottom: 24px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; }
+  .card .label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card .value { font-size: 1.8rem; font-weight: 600; color: #f0f6fc; margin-top: 4px; }
+  select { background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 6px 12px; font-size: 0.9rem; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; color: #8b949e; font-weight: 500; padding: 8px 12px; border-bottom: 1px solid #21262d; }
+  td { padding: 8px 12px; border-bottom: 1px solid #161b22; }
+  tr:hover td { background: #161b22; }
+  .sig { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+  .sig-critical { background: #da3633; color: #fff; }
+  .sig-high { background: #d29922; color: #fff; }
+  .sig-medium { background: #388bfd; color: #fff; }
+  .sig-low { background: #30363d; color: #8b949e; }
+  .kind { color: #8b949e; font-size: 0.8rem; }
+  .time { color: #8b949e; font-size: 0.8rem; white-space: nowrap; }
+  .session-summary { color: #8b949e; font-size: 0.8rem; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .empty { color: #484f58; text-align: center; padding: 32px; }
+  .refresh-btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-left: 12px; }
+  .refresh-btn:hover { background: #30363d; }
+</style>
+</head>
+<body>
+<h1>deja <span style="color:#8b949e;font-weight:400">dashboard</span></h1>
+<div class="meta">Project memory viewer <button class="refresh-btn" onclick="refresh()">Refresh</button></div>
+
+<label for="project-select">Project: </label>
+<select id="project-select" onchange="switchProject()"></select>
+
+<div class="cards" id="cards"></div>
+
+<h2>Recent Observations</h2>
+<div id="observations-table"></div>
+
+<h2>Sessions</h2>
+<div id="sessions-table"></div>
+
+<script>
+const BASE = window.location.origin;
+let currentProject = '';
+
+function fmt(epoch) {
+  if (!epoch) return '—';
+  const d = new Date(epoch);
+  const mo = d.toLocaleString('en', { month: 'short' });
+  const day = d.getDate();
+  const h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const ap = h >= 12 ? 'PM' : 'AM';
+  return `${mo} ${day}, ${h % 12 || 12}:${m} ${ap}`;
+}
+
+function sigClass(s) {
+  return 'sig sig-' + (s || 'low');
+}
+
+async function fetchJson(path) {
+  const res = await fetch(BASE + path);
+  return res.json();
+}
+
+async function loadProjects() {
+  const projects = await fetchJson('/api/projects');
+  const sel = document.getElementById('project-select');
+  sel.innerHTML = '';
+  for (const p of projects) {
+    const opt = document.createElement('option');
+    opt.value = p.project;
+    opt.textContent = p.project + ' (' + p.session_count + ' sessions)';
+    sel.appendChild(opt);
+  }
+  if (projects.length > 0) {
+    currentProject = projects[0].project;
+    sel.value = currentProject;
+  }
+}
+
+function switchProject() {
+  currentProject = document.getElementById('project-select').value;
+  loadDashboard();
+}
+
+async function loadDashboard() {
+  if (!currentProject) return;
+  const enc = encodeURIComponent(currentProject);
+
+  const [overview, observations, sessions] = await Promise.all([
+    fetchJson('/api/overview?project=' + enc),
+    fetchJson('/api/observations?project=' + enc + '&limit=50'),
+    fetchJson('/api/sessions?project=' + enc + '&limit=20'),
+  ]);
+
+  // Cards
+  const cards = document.getElementById('cards');
+  const sig = overview.by_significance || {};
+  cards.innerHTML = `
+    <div class="card"><div class="label">Sessions</div><div class="value">${overview.sessions}</div></div>
+    <div class="card"><div class="label">Observations</div><div class="value">${overview.observations}</div></div>
+    <div class="card"><div class="label">Critical</div><div class="value">${sig.critical || 0}</div></div>
+    <div class="card"><div class="label">High</div><div class="value">${sig.high || 0}</div></div>
+    <div class="card"><div class="label">Context Injections</div><div class="value">${(overview.stats || {}).context_injections || 0}</div></div>
+  `;
+
+  // Observations table
+  const obsDiv = document.getElementById('observations-table');
+  if (observations.length === 0) {
+    obsDiv.innerHTML = '<div class="empty">No observations yet</div>';
+  } else {
+    let html = '<table><tr><th>ID</th><th>Significance</th><th>Kind</th><th>Title</th><th>Time</th></tr>';
+    for (const o of observations) {
+      html += `<tr>
+        <td>#${o.id}</td>
+        <td><span class="${sigClass(o.significance)}">${o.significance}</span></td>
+        <td class="kind">${o.kind}</td>
+        <td>${esc(o.title)}</td>
+        <td class="time">${fmt(o.created_at_epoch)}</td>
+      </tr>`;
+    }
+    html += '</table>';
+    obsDiv.innerHTML = html;
+  }
+
+  // Sessions table
+  const sessDiv = document.getElementById('sessions-table');
+  if (sessions.length === 0) {
+    sessDiv.innerHTML = '<div class="empty">No sessions yet</div>';
+  } else {
+    let html = '<table><tr><th>Session</th><th>Started</th><th>Observations</th><th>Summary</th></tr>';
+    for (const s of sessions) {
+      html += `<tr>
+        <td>${esc(s.id.slice(0, 12))}</td>
+        <td class="time">${fmt(s.started_at_epoch)}</td>
+        <td>${s.obs_count}</td>
+        <td class="session-summary">${s.summary ? esc(s.summary) : '—'}</td>
+      </tr>`;
+    }
+    html += '</table>';
+    sessDiv.innerHTML = html;
+  }
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+async function refresh() {
+  await loadProjects();
+  await loadDashboard();
+}
+
+refresh();
+</script>
+</body>
+</html>

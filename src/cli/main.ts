@@ -80,7 +80,7 @@ switch (command) {
   case "dashboard": {
     const port = getFlag("--port") ?? "19533";
     process.env.DEJA_DASHBOARD_PORT = port;
-    const servePath = new URL("../dashboard/serve.ts", import.meta.url).pathname;
+    const servePath = new URL("../dashboard/serve.js", import.meta.url).pathname;
     const child = Bun.spawn(["bun", "run", servePath], {
       stdio: ["ignore", "inherit", "inherit"],
       env: { ...process.env, DEJA_DASHBOARD_PORT: port },

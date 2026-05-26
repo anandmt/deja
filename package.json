@@ -8,7 +8,7 @@
     "deja": "dist/cli/main.js"
   },
   "scripts": {
-    "build": "bun build src/worker/main.ts --outdir dist/worker --target bun && bun build src/cli/main.ts --outdir dist/cli --target bun",
+    "build": "bun build src/worker/main.ts --outdir dist/worker --target bun && bun build src/cli/main.ts --outdir dist/cli --target bun && bun build src/hooks/session-start.ts src/hooks/session-stop.ts src/hooks/post-tool-use.ts src/hooks/prompt-submit.ts --outdir dist/hooks --target bun && bun build src/mcp/server.ts --outdir dist/mcp --target bun && bun build src/dashboard/serve.ts --outdir dist/dashboard --target bun && cp src/dashboard/index.html dist/dashboard/index.html",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "typecheck": "bun x tsc --noEmit"

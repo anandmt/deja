@@ -1,4 +1,4 @@
-import { mkdirSync } from "fs";
+import { mkdirSync, existsSync } from "fs";
 import { resolve } from "path";
 import { paths } from "../paths";
 import { openDb } from "../kernel/db";
@@ -14,7 +14,14 @@ const payload = mapPayload(raw);
 
 mkdirSync(paths.dejaDir, { recursive: true });
 
-const workerScript = resolve(import.meta.dir, "..", "worker", "main.ts");
+function resolveScript(base: string, ...segments: string[]): string {
+  const tsPath = resolve(base, ...segments) + ".ts";
+  if (existsSync(tsPath)) return tsPath;
+  const jsPath = resolve(base, ...segments) + ".js";
+  if (existsSync(jsPath)) return jsPath;
+  return tsPath;
+}
+const workerScript = resolveScript(import.meta.dir, "..", "worker", "main");
 await ensureWorker({
   pidPath: paths.workerPid,
   sockPath: paths.workerSock,

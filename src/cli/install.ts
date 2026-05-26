@@ -1,13 +1,21 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { join, resolve } from "path";
 
+function resolveFile(base: string, ...segments: string[]): string {
+  const tsPath = resolve(base, ...segments) + ".ts";
+  if (existsSync(tsPath)) return tsPath;
+  const jsPath = resolve(base, ...segments) + ".js";
+  if (existsSync(jsPath)) return jsPath;
+  return tsPath;
+}
+
 function getHooksJson(): object {
   const hooksPath = resolve(import.meta.dir, "..", "..", "hooks.json");
   return JSON.parse(readFileSync(hooksPath, "utf-8"));
 }
 
 function getMcpEntry(): { command: string; args: string[] } {
-  const serverScript = resolve(import.meta.dir, "..", "mcp", "server.ts");
+  const serverScript = resolveFile(import.meta.dir, "..", "mcp", "server");
   return { command: "bun", args: ["run", serverScript] };
 }
 

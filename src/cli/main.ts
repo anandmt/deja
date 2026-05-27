@@ -85,6 +85,7 @@ switch (command) {
 
   case "dashboard": {
     const port = getFlag("--port") ?? "19533";
+    const dashUrl = `http://localhost:${port}`;
     process.env.DEJA_DASHBOARD_PORT = port;
     const servePath = new URL("../dashboard/serve.js", import.meta.url).pathname;
     const child = Bun.spawn(["bun", "run", servePath], {
@@ -93,6 +94,10 @@ switch (command) {
     });
     process.on("SIGINT", () => { child.kill(); process.exit(0); });
     process.on("SIGTERM", () => { child.kill(); process.exit(0); });
+    setTimeout(() => {
+      const openCmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
+      Bun.spawn([openCmd, dashUrl], { stdio: ["ignore", "ignore", "ignore"] });
+    }, 500);
     await child.exited;
     break;
   }

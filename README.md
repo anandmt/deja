@@ -98,16 +98,14 @@ A local web dashboard at `http://localhost:19533` — browse observation timelin
 
 Storage is efficient — roughly 250 MB per year of heavy daily use.
 
-## Commands
+## Uninstall
 
-| Command | Description |
-|---|---|
-| `deja install` | Install hooks and MCP server |
-| `deja uninstall` | Remove hooks, MCP server, and stop processes |
-| `deja uninstall --purge` | Full removal including all data (~/.deja) |
-| `deja search <query>` | Search your memories |
-| `deja stats` | Show project statistics |
-| `deja dashboard` | Open the local dashboard |
+```bash
+deja uninstall          # remove hooks and stop processes (keeps data)
+deja uninstall --purge  # full removal including all data
+```
+
+Run `deja` with no arguments to see all available commands.
 
 ## Requirements
 

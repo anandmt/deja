@@ -1,168 +1,1117 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>deja — dashboard</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #0d1117; color: #c9d1d9; padding: 24px; max-width: 1200px; margin: 0 auto; }
-  h1 { font-size: 1.5rem; margin-bottom: 8px; color: #58a6ff; }
-  h2 { font-size: 1.1rem; margin: 24px 0 12px; color: #8b949e; border-bottom: 1px solid #21262d; padding-bottom: 6px; }
-  .meta { font-size: 0.85rem; color: #8b949e; margin-bottom: 24px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
-  .card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; }
-  .card .label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; }
-  .card .value { font-size: 1.8rem; font-weight: 600; color: #f0f6fc; margin-top: 4px; }
-  select { background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 6px 12px; font-size: 0.9rem; margin-bottom: 16px; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-  th { text-align: left; color: #8b949e; font-weight: 500; padding: 8px 12px; border-bottom: 1px solid #21262d; }
-  td { padding: 8px 12px; border-bottom: 1px solid #161b22; }
-  tr:hover td { background: #161b22; }
-  .sig { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-  .sig-critical { background: #da3633; color: #fff; }
-  .sig-high { background: #d29922; color: #fff; }
-  .sig-medium { background: #388bfd; color: #fff; }
-  .sig-low { background: #30363d; color: #8b949e; }
-  .kind { color: #8b949e; font-size: 0.8rem; }
-  .time { color: #8b949e; font-size: 0.8rem; white-space: nowrap; }
-  .session-summary { color: #8b949e; font-size: 0.8rem; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .empty { color: #484f58; text-align: center; padding: 32px; }
-  .refresh-btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-left: 12px; }
-  .refresh-btn:hover { background: #30363d; }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>deja</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #06080e;
+      --surface: rgba(12, 16, 26, 0.75);
+      --surface-hover: rgba(22, 30, 48, 0.6);
+      --border: rgba(255, 255, 255, 0.05);
+      --border-hover: rgba(255, 255, 255, 0.1);
+      --text: #dfe4ed;
+      --text-sec: #6b7990;
+      --text-muted: #3c4b62;
+      --accent: #00ccf0;
+      --critical: #ff4d5a;
+      --critical-bg: rgba(255, 77, 90, 0.08);
+      --critical-border: rgba(255, 77, 90, 0.22);
+      --high: #f0a030;
+      --high-bg: rgba(240, 160, 48, 0.08);
+      --high-border: rgba(240, 160, 48, 0.22);
+      --medium: #4b8df8;
+      --medium-bg: rgba(75, 141, 248, 0.08);
+      --medium-border: rgba(75, 141, 248, 0.22);
+      --low: #4e5a6e;
+      --low-bg: rgba(78, 90, 110, 0.06);
+      --low-border: rgba(78, 90, 110, 0.18);
+      --green: #22c55e;
+      --r: 12px;
+      --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+      --serif: 'Instrument Serif', Georgia, serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #f5f6f8;
+      --surface: rgba(255, 255, 255, 0.85);
+      --surface-hover: rgba(0, 0, 0, 0.03);
+      --border: rgba(0, 0, 0, 0.08);
+      --border-hover: rgba(0, 0, 0, 0.15);
+      --text: #1a1e2a;
+      --text-sec: #5a6478;
+      --text-muted: #8e96a6;
+      --accent: #0099bb;
+      --critical: #dc2626;
+      --critical-bg: rgba(220, 38, 38, 0.07);
+      --critical-border: rgba(220, 38, 38, 0.18);
+      --high: #c47a10;
+      --high-bg: rgba(196, 122, 16, 0.07);
+      --high-border: rgba(196, 122, 16, 0.18);
+      --medium: #2563eb;
+      --medium-bg: rgba(37, 99, 235, 0.06);
+      --medium-border: rgba(37, 99, 235, 0.15);
+      --low: #6b7280;
+      --low-bg: rgba(107, 114, 128, 0.06);
+      --low-border: rgba(107, 114, 128, 0.15);
+      --green: #16a34a;
+    }
+
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+      color-scheme: dark;
+    }
+
+    [data-theme="light"] { color-scheme: light; }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(128, 128, 128, 0.2);
+      border-radius: 3px;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* atmospheric background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 8% 12%, rgba(0, 160, 240, 0.045) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 85% 75%, rgba(110, 60, 255, 0.03) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 30% at 50% 40%, rgba(0, 204, 240, 0.015) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+      transition: opacity 0.3s;
+    }
+
+    [data-theme="light"] body::before {
+      background:
+        radial-gradient(ellipse 70% 50% at 8% 12%, rgba(0, 140, 210, 0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 85% 75%, rgba(100, 50, 230, 0.025) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 30% at 50% 40%, rgba(0, 180, 220, 0.02) 0%, transparent 50%);
+    }
+
+    /* noise grain */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      opacity: 0.018;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    [data-theme="light"] body::after {
+      opacity: 0.03;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 28px 64px;
+    }
+
+    /* ── Light theme overrides for hardcoded values ─── */
+    [data-theme="light"] select {
+      background-color: rgba(255, 255, 255, 0.7);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%235a6478' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+
+    [data-theme="light"] .hdr-stats {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(240, 242, 248, 0.5));
+    }
+
+    [data-theme="light"] .ref-btn,
+    [data-theme="light"] .theme-btn {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    [data-theme="light"] .ref-btn:hover,
+    [data-theme="light"] .theme-btn:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="light"] .st:hover {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="light"] .hdr-st + .hdr-st::before {
+      background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.08), transparent);
+    }
+
+    [data-theme="light"] .conn-dot {
+      box-shadow: 0 0 6px rgba(22, 163, 74, 0.4);
+    }
+
+    [data-theme="light"] .conn-dot.off {
+      box-shadow: 0 0 6px rgba(220, 38, 38, 0.4);
+    }
+
+    /* ── Header ───────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      padding: 22px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+      gap: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .logo-img {
+      width: 65px;
+      height: 65px;
+      object-fit: contain;
+      animation: brainGlow 3s ease-in-out infinite;
+      cursor: default;
+      user-select: none;
+    }
+
+    /* ── Header Stats ─────────────────────────── */
+    .hdr-stats {
+      display: flex;
+      align-items: stretch;
+      margin-left: auto;
+      margin-right: auto;
+      background: linear-gradient(135deg, rgba(12, 16, 26, 0.6), rgba(18, 24, 38, 0.4));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .hdr-st {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 20px;
+      position: relative;
+      transition: background 0.25s;
+      cursor: default;
+    }
+
+    .hdr-st:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .hdr-st+.hdr-st::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      height: 60%;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    }
+
+    .hdr-st-val {
+      font-size: 1.2rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    .hdr-st-label {
+      font-size: 0.58rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hdr-st-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .hdr-st[data-t="sessions"] .hdr-st-dot {
+      background: var(--accent);
+      box-shadow: 0 0 6px rgba(0, 204, 240, 0.4);
+    }
+
+    .hdr-st[data-t="obs"] .hdr-st-dot {
+      background: #a78bfa;
+      box-shadow: 0 0 6px rgba(167, 139, 250, 0.4);
+    }
+
+    .hdr-st[data-t="critical"] .hdr-st-dot {
+      background: var(--critical);
+      box-shadow: 0 0 6px rgba(255, 77, 90, 0.4);
+    }
+
+    .hdr-st[data-t="critical"] .hdr-st-val {
+      color: var(--critical);
+    }
+
+    .hdr-st[data-t="high"] .hdr-st-dot {
+      background: var(--high);
+      box-shadow: 0 0 6px rgba(240, 160, 48, 0.4);
+    }
+
+    .hdr-st[data-t="high"] .hdr-st-val {
+      color: var(--high);
+    }
+
+    .hdr-st[data-t="inject"] .hdr-st-dot {
+      background: var(--green);
+      box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+    }
+
+    .hdr-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    /* connection status */
+    .conn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-sec);
+      letter-spacing: 0.02em;
+    }
+
+    .conn-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+      animation: pulse 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    .conn-dot.off {
+      background: var(--critical);
+      box-shadow: 0 0 6px rgba(255, 77, 90, 0.4);
+      animation: none;
+    }
+
+    /* refresh button */
+    .ref-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-sec);
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 0.2s;
+    }
+
+    .ref-btn:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .ref-btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .ref-btn.spin svg {
+      transform: rotate(360deg);
+    }
+
+    /* theme toggle */
+    .theme-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-sec);
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .theme-btn:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .theme-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      position: absolute;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s;
+    }
+
+    .theme-btn .icon-moon { opacity: 1; transform: rotate(0deg); }
+    .theme-btn .icon-sun { opacity: 0; transform: rotate(-90deg); }
+
+    [data-theme="light"] .theme-btn .icon-moon { opacity: 0; transform: rotate(90deg); }
+    [data-theme="light"] .theme-btn .icon-sun { opacity: 1; transform: rotate(0deg); }
+
+    /* ── Project Select ───────────────────────── */
+    .proj-bar {
+      margin-bottom: 28px;
+    }
+
+    select {
+      appearance: none;
+      background: rgba(255, 255, 255, 0.025);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 38px 10px 14px;
+      font-family: var(--font);
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      width: 100%;
+      max-width: 480px;
+      transition: all 0.2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%236b7990' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+
+    select:hover {
+      border-color: var(--border-hover);
+    }
+
+    select:focus {
+      border-color: rgba(0, 204, 240, 0.3);
+      box-shadow: 0 0 0 3px rgba(0, 204, 240, 0.06);
+    }
+
+    /* ── Stats Grid ───────────────────────────── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 40px;
+    }
+
+    .st {
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px 18px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .st::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--st-color, var(--accent));
+      opacity: 0.5;
+      transition: opacity 0.25s;
+    }
+
+    .st:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .st:hover::after {
+      opacity: 1;
+    }
+
+    .st-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-sec);
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      margin-bottom: 10px;
+    }
+
+    .st-val {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .st[data-t="sessions"] {
+      --st-color: var(--accent);
+    }
+
+    .st[data-t="obs"] {
+      --st-color: #a78bfa;
+    }
+
+    .st[data-t="critical"] {
+      --st-color: var(--critical);
+    }
+
+    .st[data-t="critical"] .st-val {
+      color: var(--critical);
+    }
+
+    .st[data-t="high"] {
+      --st-color: var(--high);
+    }
+
+    .st[data-t="high"] .st-val {
+      color: var(--high);
+    }
+
+    .st[data-t="inject"] {
+      --st-color: var(--green);
+    }
+
+    /* ── Sections ─────────────────────────────── */
+    .sec {
+      margin-bottom: 40px;
+    }
+
+    .sec-hd {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .sec-title {
+      font-size: 0.73rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-sec);
+      white-space: nowrap;
+    }
+
+    .sec-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--border), transparent 80%);
+    }
+
+    .sec-count {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Tables ───────────────────────────────── */
+    .tbl {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 1px;
+    }
+
+    .tbl th {
+      text-align: left;
+      font-size: 0.67rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      padding: 6px 14px 10px;
+    }
+
+    .tbl td {
+      padding: 11px 14px;
+      font-size: 0.84rem;
+      vertical-align: middle;
+    }
+
+    /* observation rows */
+    .o-row td:first-child {
+      border-left: 3px solid transparent;
+      border-radius: 6px 0 0 6px;
+    }
+
+    .o-row td:last-child {
+      border-radius: 0 6px 6px 0;
+    }
+
+    .o-row {
+      transition: all 0.15s ease;
+      cursor: default;
+    }
+
+    .o-row:hover td {
+      background: var(--surface-hover);
+    }
+
+    .o-row:hover td:first-child {
+      border-left-color: var(--row-c, var(--medium));
+    }
+
+    .o-row[data-s="critical"] {
+      --row-c: var(--critical);
+    }
+
+    .o-row[data-s="high"] {
+      --row-c: var(--high);
+    }
+
+    .o-row[data-s="medium"] {
+      --row-c: var(--medium);
+    }
+
+    .o-row[data-s="low"] {
+      --row-c: var(--low);
+    }
+
+    .o-id {
+      font-family: var(--mono);
+      font-size: 0.77rem;
+      color: var(--text-sec);
+      font-weight: 500;
+    }
+
+    .o-kind {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .o-title {
+      color: var(--text);
+      max-width: 440px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .o-time {
+      font-family: var(--mono);
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    /* session rows */
+    .s-row {
+      transition: all 0.15s ease;
+    }
+
+    .s-row td:first-child {
+      border-radius: 6px 0 0 6px;
+    }
+
+    .s-row td:last-child {
+      border-radius: 0 6px 6px 0;
+    }
+
+    .s-row:hover td {
+      background: var(--surface-hover);
+    }
+
+    .s-id {
+      font-family: var(--mono);
+      font-size: 0.77rem;
+      color: var(--text-sec);
+      font-weight: 500;
+    }
+
+    .s-time {
+      font-family: var(--mono);
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .s-ct {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--text-sec);
+      text-align: center;
+    }
+
+    .s-sum {
+      color: var(--text-sec);
+      font-size: 0.82rem;
+      max-width: 380px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── Significance Badges ──────────────────── */
+    .sg {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .sg-critical {
+      background: var(--critical-bg);
+      color: var(--critical);
+      border: 1px solid var(--critical-border);
+    }
+
+    .sg-high {
+      background: var(--high-bg);
+      color: var(--high);
+      border: 1px solid var(--high-border);
+    }
+
+    .sg-medium {
+      background: var(--medium-bg);
+      color: var(--medium);
+      border: 1px solid var(--medium-border);
+    }
+
+    .sg-low {
+      background: var(--low-bg);
+      color: var(--low);
+      border: 1px solid var(--low-border);
+    }
+
+    /* ── Empty ────────────────────────────────── */
+    .empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      font-style: italic;
+    }
+
+    /* ── Animations ───────────────────────────── */
+    @keyframes brainGlow {
+
+      0%,
+      100% {
+        filter: drop-shadow(0 0 3px rgba(224, 120, 80, 0.2));
+      }
+
+      50% {
+        filter: drop-shadow(0 0 10px rgba(224, 120, 80, 0.45)) drop-shadow(0 0 20px rgba(224, 120, 80, 0.15));
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.35;
+      }
+    }
+
+    @keyframes rowIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .row-anim {
+      animation: rowIn 0.3s ease both;
+    }
+
+    /* data refresh transition */
+    .data-zone {
+      transition: opacity 0.12s ease;
+    }
+
+    .data-zone.updating {
+      opacity: 0.7;
+    }
+
+    /* ── Responsive ───────────────────────────── */
+    @media (max-width: 960px) {
+      .hdr-st {
+        padding: 8px 14px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .hdr-st {
+        padding: 8px 10px;
+      }
+
+      .hdr-st-label {
+        font-size: 0;
+        gap: 0;
+      }
+
+      .hdr-st-dot {
+        width: 6px;
+        height: 6px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        padding: 0 16px 48px;
+      }
+
+      header {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .hdr-stats {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .hdr-st-label {
+        font-size: 0.54rem;
+      }
+
+      .o-title {
+        max-width: 180px;
+      }
+
+      .s-sum {
+        max-width: 180px;
+      }
+
+      .tbl {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+  <script>
+    (function() {
+      var t = localStorage.getItem('deja-theme');
+      if (!t && window.matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
+      if (t) document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
 </head>
+
 <body>
-<h1>deja <span style="color:#8b949e;font-weight:400">dashboard</span></h1>
-<div class="meta">Project memory viewer <button class="refresh-btn" onclick="refresh()">Refresh</button></div>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <img src="logo.png" class="logo-img" alt="deja" width="65" height="65">
+      </div>
+      <div class="hdr-stats" id="hdr-stats"></div>
+      <div class="hdr-right">
+        <div class="conn" id="conn-status">
+          <span class="conn-dot" id="conn-dot"></span>
+          <span id="conn-text">Live</span>
+        </div>
+        <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+          <svg class="icon-moon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+        <button class="ref-btn" id="ref-btn" onclick="doRefresh()">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
 
-<label for="project-select">Project: </label>
-<select id="project-select" onchange="switchProject()"></select>
+    <div class="proj-bar">
+      <select id="project-select" onchange="switchProject()"></select>
+    </div>
 
-<div class="cards" id="cards"></div>
+    <div class="data-zone" id="cards" style="display:none"></div>
 
-<h2>Recent Observations</h2>
-<div id="observations-table"></div>
+    <div class="sec">
+      <div class="sec-hd">
+        <span class="sec-title">Recent Observations</span>
+        <div class="sec-line"></div>
+        <span class="sec-count" id="obs-count"></span>
+      </div>
+      <div class="data-zone" id="observations-table"></div>
+    </div>
 
-<h2>Sessions</h2>
-<div id="sessions-table"></div>
+    <div class="sec">
+      <div class="sec-hd">
+        <span class="sec-title">Sessions</span>
+        <div class="sec-line"></div>
+        <span class="sec-count" id="sess-count"></span>
+      </div>
+      <div class="data-zone" id="sessions-table"></div>
+    </div>
+  </div>
 
-<script>
-const BASE = window.location.origin;
-let currentProject = '';
-
-function fmt(epoch) {
-  if (!epoch) return '—';
-  const d = new Date(epoch);
-  const mo = d.toLocaleString('en', { month: 'short' });
-  const day = d.getDate();
-  const h = d.getHours();
-  const m = String(d.getMinutes()).padStart(2, '0');
-  const ap = h >= 12 ? 'PM' : 'AM';
-  return `${mo} ${day}, ${h % 12 || 12}:${m} ${ap}`;
-}
-
-function sigClass(s) {
-  return 'sig sig-' + (s || 'low');
-}
-
-async function fetchJson(path) {
-  const res = await fetch(BASE + path);
-  return res.json();
-}
-
-async function loadProjects() {
-  const projects = await fetchJson('/api/projects');
-  const sel = document.getElementById('project-select');
-  sel.innerHTML = '';
-  for (const p of projects) {
-    const opt = document.createElement('option');
-    opt.value = p.project;
-    opt.textContent = p.project + ' (' + p.session_count + ' sessions)';
-    sel.appendChild(opt);
-  }
-  if (projects.length > 0) {
-    currentProject = projects[0].project;
-    sel.value = currentProject;
-  }
-}
-
-function switchProject() {
-  currentProject = document.getElementById('project-select').value;
-  loadDashboard();
-}
-
-async function loadDashboard() {
-  if (!currentProject) return;
-  const enc = encodeURIComponent(currentProject);
-
-  const [overview, observations, sessions] = await Promise.all([
-    fetchJson('/api/overview?project=' + enc),
-    fetchJson('/api/observations?project=' + enc + '&limit=50'),
-    fetchJson('/api/sessions?project=' + enc + '&limit=20'),
-  ]);
-
-  // Cards
-  const cards = document.getElementById('cards');
-  const sig = overview.by_significance || {};
-  cards.innerHTML = `
-    <div class="card"><div class="label">Sessions</div><div class="value">${overview.sessions}</div></div>
-    <div class="card"><div class="label">Observations</div><div class="value">${overview.observations}</div></div>
-    <div class="card"><div class="label">Critical</div><div class="value">${sig.critical || 0}</div></div>
-    <div class="card"><div class="label">High</div><div class="value">${sig.high || 0}</div></div>
-    <div class="card"><div class="label">Context Injections</div><div class="value">${(overview.stats || {}).context_injections || 0}</div></div>
-  `;
-
-  // Observations table
-  const obsDiv = document.getElementById('observations-table');
-  if (observations.length === 0) {
-    obsDiv.innerHTML = '<div class="empty">No observations yet</div>';
-  } else {
-    let html = '<table><tr><th>ID</th><th>Significance</th><th>Kind</th><th>Title</th><th>Time</th></tr>';
-    for (const o of observations) {
-      html += `<tr>
-        <td>#${o.id}</td>
-        <td><span class="${sigClass(o.significance)}">${o.significance}</span></td>
-        <td class="kind">${o.kind}</td>
-        <td>${esc(o.title)}</td>
-        <td class="time">${fmt(o.created_at_epoch)}</td>
-      </tr>`;
+  <script>
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('deja-theme', next);
     }
-    html += '</table>';
-    obsDiv.innerHTML = html;
-  }
 
-  // Sessions table
-  const sessDiv = document.getElementById('sessions-table');
-  if (sessions.length === 0) {
-    sessDiv.innerHTML = '<div class="empty">No sessions yet</div>';
-  } else {
-    let html = '<table><tr><th>Session</th><th>Started</th><th>Observations</th><th>Summary</th></tr>';
-    for (const s of sessions) {
-      html += `<tr>
-        <td>${esc(s.id.slice(0, 12))}</td>
-        <td class="time">${fmt(s.started_at_epoch)}</td>
-        <td>${s.obs_count}</td>
-        <td class="session-summary">${s.summary ? esc(s.summary) : '—'}</td>
-      </tr>`;
+    const BASE = window.location.origin;
+    let currentProject = '';
+    let isFirstLoad = true;
+
+    function fmt(epoch) {
+      if (!epoch) return '—';
+      const d = new Date(epoch);
+      const mo = d.toLocaleString('en', { month: 'short' });
+      const day = d.getDate();
+      const h = d.getHours();
+      const m = String(d.getMinutes()).padStart(2, '0');
+      const ap = h >= 12 ? 'PM' : 'AM';
+      return `${mo} ${day}, ${h % 12 || 12}:${m} ${ap}`;
     }
-    html += '</table>';
-    sessDiv.innerHTML = html;
-  }
-}
 
-function esc(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
+    function sgClass(s) {
+      return 'sg sg-' + (s || 'low');
+    }
 
-async function refresh() {
-  await loadProjects();
-  await loadDashboard();
-}
+    function esc(str) {
+      if (!str) return '';
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
 
-refresh();
-</script>
+    async function fetchJson(path) {
+      const res = await fetch(BASE + path);
+      return res.json();
+    }
+
+    function animateVal(el, end) {
+      if (!isFirstLoad || end === 0) { el.textContent = end; return; }
+      const dur = 500;
+      const t0 = performance.now();
+      (function step(now) {
+        const p = Math.min((now - t0) / dur, 1);
+        const e = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(end * e);
+        if (p < 1) requestAnimationFrame(step);
+      })(t0);
+    }
+
+    async function loadProjects() {
+      const projects = await fetchJson('/api/projects');
+      const sel = document.getElementById('project-select');
+      sel.innerHTML = '';
+      for (const p of projects) {
+        const opt = document.createElement('option');
+        opt.value = p.project;
+        opt.textContent = p.project + ' (' + p.session_count + ' sessions)';
+        sel.appendChild(opt);
+      }
+      if (projects.length > 0) {
+        currentProject = projects[0].project;
+        sel.value = currentProject;
+      }
+    }
+
+    function switchProject() {
+      currentProject = document.getElementById('project-select').value;
+      isFirstLoad = true;
+      loadDashboard();
+    }
+
+    async function loadDashboard() {
+      if (!currentProject) return;
+      const enc = encodeURIComponent(currentProject);
+
+      const [overview, observations, sessions] = await Promise.all([
+        fetchJson('/api/overview?project=' + enc),
+        fetchJson('/api/observations?project=' + enc + '&limit=50'),
+        fetchJson('/api/sessions?project=' + enc + '&limit=20'),
+      ]);
+
+      const sig = overview.by_significance || {};
+      const stats = overview.stats || {};
+
+      const hdrStats = document.getElementById('hdr-stats');
+      hdrStats.innerHTML = `
+        <div class="hdr-st" data-t="sessions"><span class="hdr-st-val" id="v-sess"></span><span class="hdr-st-label"><span class="hdr-st-dot"></span>Sessions</span></div>
+        <div class="hdr-st" data-t="obs"><span class="hdr-st-val" id="v-obs"></span><span class="hdr-st-label"><span class="hdr-st-dot"></span>Observations</span></div>
+        <div class="hdr-st" data-t="critical"><span class="hdr-st-val" id="v-crit"></span><span class="hdr-st-label"><span class="hdr-st-dot"></span>Critical</span></div>
+        <div class="hdr-st" data-t="high"><span class="hdr-st-val" id="v-high"></span><span class="hdr-st-label"><span class="hdr-st-dot"></span>High</span></div>
+        <div class="hdr-st" data-t="inject"><span class="hdr-st-val" id="v-inj"></span><span class="hdr-st-label"><span class="hdr-st-dot"></span>Injections</span></div>
+      `;
+      animateVal(document.getElementById('v-sess'), overview.sessions || 0);
+      animateVal(document.getElementById('v-obs'), overview.observations || 0);
+      animateVal(document.getElementById('v-crit'), sig.critical || 0);
+      animateVal(document.getElementById('v-high'), sig.high || 0);
+      animateVal(document.getElementById('v-inj'), stats.context_injections || 0);
+
+      // Observations
+      const obsDiv = document.getElementById('observations-table');
+      document.getElementById('obs-count').textContent = observations.length ? observations.length + ' shown' : '';
+      if (observations.length === 0) {
+        obsDiv.innerHTML = '<div class="empty">No observations yet</div>';
+      } else {
+        let html = '<table class="tbl"><tr><th>ID</th><th>Significance</th><th>Kind</th><th>Title</th><th style="text-align:right">Time</th></tr>';
+        observations.forEach((o, i) => {
+          const delay = isFirstLoad ? `style="animation-delay:${i * 20}ms"` : '';
+          html += `<tr class="o-row${isFirstLoad ? ' row-anim' : ''}" data-s="${o.significance}" ${delay}>
+        <td class="o-id">#${o.id}</td>
+        <td><span class="${sgClass(o.significance)}">${o.significance}</span></td>
+        <td class="o-kind">${o.kind}</td>
+        <td class="o-title">${esc(o.title)}</td>
+        <td class="o-time">${fmt(o.created_at_epoch)}</td>
+      </tr>`;
+        });
+        html += '</table>';
+        obsDiv.innerHTML = html;
+      }
+
+      // Sessions
+      const sessDiv = document.getElementById('sessions-table');
+      document.getElementById('sess-count').textContent = sessions.length ? sessions.length + ' shown' : '';
+      if (sessions.length === 0) {
+        sessDiv.innerHTML = '<div class="empty">No sessions yet</div>';
+      } else {
+        let html = '<table class="tbl"><tr><th>Session</th><th>Started</th><th style="text-align:center">Obs</th><th>Summary</th></tr>';
+        sessions.forEach((s, i) => {
+          const delay = isFirstLoad ? `style="animation-delay:${(i * 20) + 100}ms"` : '';
+          html += `<tr class="s-row${isFirstLoad ? ' row-anim' : ''}" ${delay}>
+        <td class="s-id">${esc(s.id.slice(0, 12))}</td>
+        <td class="s-time">${fmt(s.started_at_epoch)}</td>
+        <td class="s-ct">${s.obs_count}</td>
+        <td class="s-sum">${s.summary ? esc(s.summary) : '—'}</td>
+      </tr>`;
+        });
+        html += '</table>';
+        sessDiv.innerHTML = html;
+      }
+
+      isFirstLoad = false;
+    }
+
+    async function refresh() {
+      await loadProjects();
+      await loadDashboard();
+    }
+
+    function doRefresh() {
+      const btn = document.getElementById('ref-btn');
+      btn.classList.remove('spin');
+      void btn.offsetWidth;
+      btn.classList.add('spin');
+      refresh();
+      setTimeout(() => btn.classList.remove('spin'), 500);
+    }
+
+    function sseRefresh() {
+      document.querySelectorAll('.data-zone').forEach(el => el.classList.add('updating'));
+      refresh().then(() => {
+        document.querySelectorAll('.data-zone').forEach(el => el.classList.remove('updating'));
+      });
+    }
+
+    // Initial load
+    refresh();
+
+    // SSE live updates
+    const es = new EventSource(BASE + '/api/events');
+    es.onmessage = () => sseRefresh();
+    es.onopen = () => {
+      document.getElementById('conn-dot').classList.remove('off');
+      document.getElementById('conn-text').textContent = 'Live';
+    };
+    es.onerror = () => {
+      document.getElementById('conn-dot').classList.add('off');
+      document.getElementById('conn-text').textContent = 'Offline';
+    };
+  </script>
 </body>
+
 </html>

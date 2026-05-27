@@ -16,7 +16,8 @@ Usage: deja <command> [options]
 
 Commands:
   install              Install hooks and MCP server globally (~/.claude/settings.json)
-  uninstall            Remove hooks and MCP server from global settings
+  uninstall            Remove hooks, MCP server, and stop processes
+    --purge            Also delete all data (~/.deja including memory.db)
   search <query>       Search observations by keyword
     --project <path>   Filter by project path (default: cwd)
     --significance <s> Filter: low | medium | high | critical
@@ -43,8 +44,13 @@ switch (command) {
   }
 
   case "uninstall": {
-    uninstall();
-    console.log("deja uninstalled from global settings");
+    const purge = args.includes("--purge");
+    uninstall({ purge });
+    if (purge) {
+      console.log("deja fully uninstalled (all data removed)");
+    } else {
+      console.log("deja uninstalled (data preserved in ~/.deja — use --purge to remove)");
+    }
     break;
   }
 

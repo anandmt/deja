@@ -1,8 +1,8 @@
 <p align="center">
-  <h1 align="center">deja</h1>
-  <p align="center">
-    <strong>Claude Code forgets everything between sessions. deja fixes that.</strong>
-  </p>
+  <img src="src/dashboard/logo.png" alt="deja" width="120">
+</p>
+<p align="center">
+  <strong>Claude Code forgets everything between sessions. deja fixes that.</strong>
 </p>
 
 <p align="center">
@@ -103,7 +103,8 @@ Storage is efficient — roughly 250 MB per year of heavy daily use.
 | Command | Description |
 |---|---|
 | `deja install` | Install hooks and MCP server |
-| `deja uninstall` | Remove hooks and MCP server |
+| `deja uninstall` | Remove hooks, MCP server, and stop processes |
+| `deja uninstall --purge` | Full removal including all data (~/.deja) |
 | `deja search <query>` | Search your memories |
 | `deja stats` | Show project statistics |
 | `deja dashboard` | Open the local dashboard |

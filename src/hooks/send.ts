@@ -2,6 +2,8 @@ import { sendToWorker, requestFromWorker } from "../kernel/socket";
 import { appendToWal } from "../kernel/wal";
 import type { EventMessage, RequestMessage } from "../types";
 
+const DASHBOARD_NOTIFY_URL = `http://localhost:${process.env.DEJA_DASHBOARD_PORT ?? "19533"}/api/notify`;
+
 export async function trySendEvent(
   socketPath: string,
   message: EventMessage,
@@ -13,6 +15,7 @@ export async function trySendEvent(
   } catch {
     appendToWal(walPath, walLockPath, JSON.stringify(message.payload));
   }
+  notifyDashboard();
 }
 
 export async function trySendRequest(
@@ -25,4 +28,8 @@ export async function trySendRequest(
   } catch {
     return null;
   }
+}
+
+function notifyDashboard(): void {
+  fetch(DASHBOARD_NOTIFY_URL, { method: "POST" }).catch(() => {});
 }

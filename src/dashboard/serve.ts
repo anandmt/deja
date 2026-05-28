@@ -1,6 +1,6 @@
 import { openDb } from "../kernel/db";
 import { runMigrations } from "../kernel/migrations";
-import { getOverview, getRecentObservations, getSessions, getProjects, deleteProject } from "./api";
+import { getOverview, getRecentObservations, getSessions, getProjects, searchObservations, deleteProject } from "./api";
 import { join, resolve } from "path";
 import { homedir } from "os";
 
@@ -101,6 +101,26 @@ Bun.serve({
     if (path === "/api/observations") {
       const project = getParam(url, "project", process.cwd());
       const limit = parseInt(getParam(url, "limit", "50"), 10);
+      const query = url.searchParams.get("query") ?? "";
+      const significance = url.searchParams.get("significance") ?? "";
+      const dateFrom = url.searchParams.get("dateFrom") ?? "";
+      const dateTo = url.searchParams.get("dateTo") ?? "";
+      const sortBy = url.searchParams.get("sortBy") ?? "";
+      const sortDir = url.searchParams.get("sortDir") ?? "";
+
+      if (query || significance || dateFrom || dateTo || sortBy) {
+        return json(searchObservations(db, {
+          project,
+          query: query || undefined,
+          significance: significance || undefined,
+          dateFrom: dateFrom ? parseInt(dateFrom, 10) : undefined,
+          dateTo: dateTo ? parseInt(dateTo, 10) : undefined,
+          sortBy: (sortBy as "time" | "id") || undefined,
+          sortDir: (sortDir as "asc" | "desc") || undefined,
+          limit: Math.min(limit, 200),
+        }));
+      }
+
       return json(getRecentObservations(db, project, Math.min(limit, 200)));
     }
 

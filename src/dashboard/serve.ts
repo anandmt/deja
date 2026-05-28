@@ -1,6 +1,6 @@
 import { openDb } from "../kernel/db";
 import { runMigrations } from "../kernel/migrations";
-import { getOverview, getRecentObservations, getSessions, getProjects, searchObservations } from "./api";
+import { getOverview, getRecentObservations, getSessions, getProjects, searchObservations, deleteProject } from "./api";
 import { join, resolve } from "path";
 import { homedir } from "os";
 
@@ -44,7 +44,7 @@ function notifyClients() {
 
 Bun.serve({
   port,
-  fetch(req) {
+  async fetch(req) {
     const url = new URL(req.url);
     const path = url.pathname;
 
@@ -128,6 +128,26 @@ Bun.serve({
       const project = getParam(url, "project", process.cwd());
       const limit = parseInt(getParam(url, "limit", "20"), 10);
       return json(getSessions(db, project, Math.min(limit, 100)));
+    }
+
+    if (path === "/api/project/delete" && req.method === "POST") {
+      try {
+        const body = await req.json() as { project?: string };
+        if (!body.project) {
+          return new Response(JSON.stringify({ error: "Missing project parameter" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        }
+        const deleted = deleteProject(db, body.project);
+        notifyClients();
+        return json({ ok: true, deleted });
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid request body" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        });
+      }
     }
 
     if (path === "/favicon.ico") {

@@ -418,6 +418,9 @@
 
     /* ── Project Select ───────────────────────── */
     .proj-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 28px;
     }
 
@@ -1002,6 +1005,216 @@
       opacity: 0.7;
     }
 
+    /* ── Delete Button ───────────────────────── */
+    .del-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-sec);
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .del-btn:hover {
+      background: var(--critical-bg);
+      border-color: var(--critical-border);
+      color: var(--critical);
+    }
+
+    .del-btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* ── Modal ────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .modal-overlay.visible {
+      opacity: 1;
+    }
+
+    .modal {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+      max-width: 480px;
+      width: 90%;
+      transform: scale(0.96);
+      transition: transform 0.15s ease;
+    }
+
+    .modal-overlay.visible .modal {
+      transform: scale(1);
+    }
+
+    .modal-warn {
+      color: var(--critical);
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .modal-path {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--text);
+      word-break: break-all;
+      margin-bottom: 16px;
+    }
+
+    .modal-stats {
+      font-size: 0.78rem;
+      color: var(--text-sec);
+      margin-bottom: 16px;
+    }
+
+    .modal-active-warn {
+      background: var(--high-bg);
+      border: 1px solid var(--high-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.76rem;
+      color: var(--high);
+      margin-bottom: 16px;
+    }
+
+    .modal-confirm-label {
+      font-size: 0.78rem;
+      color: var(--text-sec);
+      margin-bottom: 8px;
+    }
+
+    .modal-confirm-label strong {
+      color: var(--text);
+    }
+
+    .modal-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 20px;
+    }
+
+    .modal-input:focus {
+      border-color: rgba(255, 77, 90, 0.4);
+      box-shadow: 0 0 0 3px rgba(255, 77, 90, 0.06);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .modal-cancel {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-sec);
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-cancel:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .modal-delete {
+      background: var(--critical);
+      border: 1px solid transparent;
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-delete:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .modal-delete:not(:disabled):hover {
+      background: #e0343f;
+    }
+
+    .modal-delete .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .modal-error {
+      color: var(--critical);
+      font-size: 0.76rem;
+      margin-top: 12px;
+    }
+
+    /* ── Empty State ─────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-sec);
+    }
+
+    .empty-state-title {
+      font-family: var(--serif);
+      font-size: 1.3rem;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .empty-state-sub {
+      font-size: 0.84rem;
+    }
+
     /* ── Responsive ───────────────────────────── */
     @media (max-width: 960px) {
       .hdr-st {
@@ -1106,6 +1319,12 @@
 
     <div class="proj-bar">
       <select id="project-select" onchange="switchProject()"></select>
+      <button class="del-btn" id="del-btn" onclick="openDeleteModal()" title="Delete project memory" style="display:none">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </button>
     </div>
 
     <div class="data-zone" id="cards" style="display:none"></div>
@@ -1148,6 +1367,29 @@
         <span class="sec-count" id="sess-count"></span>
       </div>
       <div class="data-zone" id="sessions-table"></div>
+    </div>
+
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="empty-state-title">No projects tracked yet</div>
+      <div class="empty-state-sub">Start a Claude Code session to begin.</div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <div class="modal-warn">Delete all memory for:</div>
+      <div class="modal-path" id="modal-path"></div>
+      <div class="modal-stats" id="modal-stats"></div>
+      <div class="modal-active-warn" id="modal-active-warn" style="display:none">
+        This project has an active session. Observations may reappear after deletion.
+      </div>
+      <div class="modal-confirm-label">Type "<strong id="modal-confirm-name"></strong>" to confirm:</div>
+      <input class="modal-input" id="modal-input" type="text" autocomplete="off" spellcheck="false">
+      <div class="modal-actions">
+        <button class="modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+        <button class="modal-delete" id="modal-delete-btn" disabled onclick="confirmDelete()">Delete Project Memory</button>
+      </div>
+      <div class="modal-error" id="modal-error" style="display:none"></div>
     </div>
   </div>
 
@@ -1283,9 +1525,18 @@
         opt.textContent = p.project + ' (' + p.session_count + ' sessions)';
         sel.appendChild(opt);
       }
-      if (projects.length > 0) {
+
+      const hasProjects = projects.length > 0;
+      document.getElementById('del-btn').style.display = hasProjects ? '' : 'none';
+      document.querySelectorAll('.sec').forEach(el => el.style.display = hasProjects ? '' : 'none');
+      document.getElementById('empty-state').style.display = hasProjects ? 'none' : '';
+
+      if (hasProjects) {
         currentProject = projects[0].project;
         sel.value = currentProject;
+      } else {
+        currentProject = '';
+        document.getElementById('hdr-stats').innerHTML = '';
       }
     }
 
@@ -1306,6 +1557,92 @@
       loadDashboard();
     }
 
+    let deleteTarget = '';
+    let deleteConfirmName = '';
+
+    function getLastPathSegment(path) {
+      const parts = path.replace(/\/+$/, '').split('/');
+      return parts[parts.length - 1] || path;
+    }
+
+    function openDeleteModal() {
+      if (!currentProject) return;
+      deleteTarget = currentProject;
+      deleteConfirmName = getLastPathSegment(currentProject);
+
+      document.getElementById('modal-path').textContent = deleteTarget;
+      document.getElementById('modal-confirm-name').textContent = deleteConfirmName;
+
+      const overview = window._lastOverview;
+      const sessions = overview ? overview.sessions : 0;
+      const observations = overview ? overview.observations : 0;
+      document.getElementById('modal-stats').textContent = sessions + ' session' + (sessions !== 1 ? 's' : '') + ' · ' + observations + ' observation' + (observations !== 1 ? 's' : '');
+
+      const activeSessions = overview ? overview.active_sessions : 0;
+      document.getElementById('modal-active-warn').style.display = activeSessions > 0 ? '' : 'none';
+
+      document.getElementById('modal-input').value = '';
+      document.getElementById('modal-delete-btn').disabled = true;
+      document.getElementById('modal-delete-btn').innerHTML = 'Delete Project Memory';
+      document.getElementById('modal-error').style.display = 'none';
+
+      const overlay = document.getElementById('delete-modal');
+      overlay.style.display = 'flex';
+      requestAnimationFrame(() => overlay.classList.add('visible'));
+      document.getElementById('modal-input').focus();
+    }
+
+    function closeDeleteModal() {
+      const overlay = document.getElementById('delete-modal');
+      overlay.classList.remove('visible');
+      setTimeout(() => { overlay.style.display = 'none'; }, 150);
+      deleteTarget = '';
+      deleteConfirmName = '';
+    }
+
+    document.getElementById('modal-input').addEventListener('input', function() {
+      document.getElementById('modal-delete-btn').disabled = this.value !== deleteConfirmName;
+    });
+
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeDeleteModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && document.getElementById('delete-modal').style.display === 'flex') {
+        closeDeleteModal();
+      }
+    });
+
+    async function confirmDelete() {
+      const btn = document.getElementById('modal-delete-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Deleting…';
+      document.getElementById('modal-error').style.display = 'none';
+
+      try {
+        const res = await fetch(BASE + '/api/project/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project: deleteTarget }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        closeDeleteModal();
+        await loadProjects();
+        if (currentProject) {
+          await loadDashboard();
+        }
+      } catch (err) {
+        const errEl = document.getElementById('modal-error');
+        errEl.textContent = 'Failed to delete: ' + err.message;
+        errEl.style.display = '';
+        btn.disabled = false;
+        btn.innerHTML = 'Delete Project Memory';
+      }
+    }
+
     async function loadDashboard() {
       if (!currentProject) return;
       const enc = encodeURIComponent(currentProject);
@@ -1315,6 +1652,7 @@
         fetchJson('/api/sessions?project=' + enc + '&limit=20'),
       ]);
 
+      window._lastOverview = overview;
       const sig = overview.by_significance || {};
       const stats = overview.stats || {};
 

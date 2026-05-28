@@ -2,7 +2,7 @@ import { describe, test, expect, afterEach } from "bun:test";
 import { Database } from "bun:sqlite";
 import { tmpDb, cleanupDb } from "../../src/test/helpers";
 import { runMigrations } from "../../src/kernel/migrations";
-import { getOverview, getRecentObservations, getSessions, getProjects } from "../../src/dashboard/api";
+import { getOverview, getRecentObservations, getSessions, getProjects, searchObservations } from "../../src/dashboard/api";
 
 function insertSession(db: Database, id: string, project: string, summary: string | null = null, startedAt: number = Date.now()): void {
   db.prepare("INSERT INTO sessions (id, project, started_at_epoch, ended_at_epoch, summary) VALUES (?, ?, ?, ?, ?)")
@@ -126,5 +126,97 @@ describe("getProjects", () => {
     runMigrations(db);
     const results = getProjects(db);
     expect(results).toEqual([]);
+  });
+});
+
+describe("searchObservations", () => {
+  let db: Database;
+  afterEach(() => { if (db) cleanupDb(db); });
+
+  test("returns all observations when no filters", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "high", kind: "decision", title: "First" , createdAt: 1000 });
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: "Second", createdAt: 2000 });
+
+    const results = searchObservations(db, { project: "/project" });
+    expect(results.length).toBe(2);
+    expect(results[0].title).toBe("Second");
+    expect(results[1].title).toBe("First");
+  });
+
+  test("filters by significance", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "high", kind: "decision", title: "High one" });
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: "Medium one" });
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "critical", kind: "decision", title: "Critical one" });
+
+    const results = searchObservations(db, { project: "/project", significance: "high" });
+    expect(results.length).toBe(1);
+    expect(results[0].title).toBe("High one");
+  });
+
+  test("filters by date range", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: "Old", createdAt: 1000 });
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: "Mid", createdAt: 5000 });
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: "New", createdAt: 9000 });
+
+    const results = searchObservations(db, { project: "/project", dateFrom: 2000, dateTo: 7000 });
+    expect(results.length).toBe(1);
+    expect(results[0].title).toBe("Mid");
+  });
+
+  test("FTS search returns matching results", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "high", kind: "decision", title: "Implemented authentication flow" });
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: "Updated database schema" });
+
+    const results = searchObservations(db, { project: "/project", query: "authentication" });
+    expect(results.length).toBe(1);
+    expect(results[0].title).toBe("Implemented authentication flow");
+  });
+
+  test("FTS search with significance filter combined", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "high", kind: "decision", title: "Added new feature" });
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: "Added new test" });
+
+    const results = searchObservations(db, { project: "/project", query: "added", significance: "high" });
+    expect(results.length).toBe(1);
+    expect(results[0].significance).toBe("high");
+  });
+
+  test("sort by time ascending", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: "First", createdAt: 1000 });
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: "Second", createdAt: 2000 });
+
+    const results = searchObservations(db, { project: "/project", sortBy: "time", sortDir: "asc" });
+    expect(results[0].title).toBe("First");
+    expect(results[1].title).toBe("Second");
+  });
+
+  test("respects limit", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+    for (let i = 0; i < 20; i++) {
+      insertObs(db, { sessionId: "s1", project: "/project", significance: "medium", kind: "file_edit", title: `Obs ${i}`, createdAt: i });
+    }
+
+    const results = searchObservations(db, { project: "/project", limit: 5 });
+    expect(results.length).toBe(5);
   });
 });

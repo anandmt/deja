@@ -746,6 +746,203 @@
       border: 1px solid var(--low-border);
     }
 
+    /* ── Observations Card ─────────────────────── */
+    .obs-card {
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px;
+    }
+
+    .search-wrap {
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      stroke: var(--text-muted);
+      stroke-width: 2;
+      fill: none;
+      pointer-events: none;
+    }
+
+    .obs-search {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.025);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px 10px 36px;
+      font-family: var(--font);
+      font-size: 0.84rem;
+      font-weight: 500;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .obs-search:focus {
+      border-color: rgba(0, 204, 240, 0.3);
+      box-shadow: 0 0 0 3px rgba(0, 204, 240, 0.06);
+    }
+
+    .obs-search::placeholder {
+      color: var(--text-muted);
+    }
+
+    [data-theme="light"] .obs-search {
+      background-color: rgba(255, 255, 255, 0.7);
+    }
+
+    .obs-filters {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .obs-date {
+      background: rgba(255, 255, 255, 0.025);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      outline: none;
+      transition: all 0.2s;
+      color-scheme: dark;
+    }
+
+    .obs-date:focus {
+      border-color: rgba(0, 204, 240, 0.3);
+      box-shadow: 0 0 0 3px rgba(0, 204, 240, 0.06);
+    }
+
+    [data-theme="light"] .obs-date {
+      background-color: rgba(255, 255, 255, 0.7);
+      color-scheme: light;
+    }
+
+    .date-sep {
+      color: var(--text-muted);
+      font-size: 0.72rem;
+    }
+
+    /* ── Significance Filter Chips ────────────── */
+    .sig-chips {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .sig-chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-sec);
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-family: var(--font);
+    }
+
+    .sig-chip:hover {
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .sig-chip[data-sig="all"].active {
+      background: rgba(0, 204, 240, 0.1);
+      border-color: rgba(0, 204, 240, 0.3);
+      color: var(--accent);
+    }
+
+    .sig-chip[data-sig="critical"].active {
+      background: var(--critical-bg);
+      border-color: var(--critical-border);
+      color: var(--critical);
+    }
+
+    .sig-chip[data-sig="high"].active {
+      background: var(--high-bg);
+      border-color: var(--high-border);
+      color: var(--high);
+    }
+
+    .sig-chip[data-sig="medium"].active {
+      background: var(--medium-bg);
+      border-color: var(--medium-border);
+      color: var(--medium);
+    }
+
+    .sig-chip[data-sig="low"].active {
+      background: var(--low-bg);
+      border-color: var(--low-border);
+      color: var(--low);
+    }
+
+    /* ── Sortable Columns ─────────────────────── */
+    .tbl th.sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.2s;
+    }
+
+    .tbl th.sortable:hover {
+      color: var(--text-sec);
+    }
+
+    .tbl th .sort-arrow {
+      display: inline-block;
+      margin-left: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 0.6rem;
+    }
+
+    .tbl th.sortable:hover .sort-arrow {
+      opacity: 0.4;
+    }
+
+    .tbl th.sorted .sort-arrow {
+      opacity: 1;
+      color: var(--accent);
+    }
+
+    .tbl th.sorted {
+      color: var(--text);
+    }
+
+    /* ── Kind Icons ───────────────────────────── */
+    .kind-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kind-icon svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--text-muted);
+      stroke-width: 1.8;
+      fill: none;
+      flex-shrink: 0;
+    }
+
     /* ── Empty ────────────────────────────────── */
     .empty {
       text-align: center;
@@ -915,11 +1112,33 @@
 
     <div class="sec">
       <div class="sec-hd">
-        <span class="sec-title">Recent Observations</span>
+        <span class="sec-title">Observations</span>
         <div class="sec-line"></div>
         <span class="sec-count" id="obs-count"></span>
       </div>
-      <div class="data-zone" id="observations-table"></div>
+      <div class="obs-card">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input class="obs-search" id="obs-search" type="text"
+                 placeholder="Search observations..." autocomplete="off" spellcheck="false">
+        </div>
+        <div class="obs-filters">
+          <input class="obs-date" id="date-from" type="date" title="From date">
+          <span class="date-sep">to</span>
+          <input class="obs-date" id="date-to" type="date" title="To date">
+          <div class="sig-chips" id="sig-chips">
+            <button class="sig-chip active" data-sig="all">All</button>
+            <button class="sig-chip" data-sig="critical">Critical</button>
+            <button class="sig-chip" data-sig="high">High</button>
+            <button class="sig-chip" data-sig="medium">Medium</button>
+            <button class="sig-chip" data-sig="low">Low</button>
+          </div>
+        </div>
+        <div class="data-zone" id="observations-table"></div>
+      </div>
     </div>
 
     <div class="sec">
@@ -943,6 +1162,13 @@
     const BASE = window.location.origin;
     let currentProject = '';
     let isFirstLoad = true;
+    let obsQuery = '';
+    let obsSig = '';
+    let obsDateFrom = '';
+    let obsDateTo = '';
+    let obsSortBy = '';
+    let obsSortDir = '';
+    let searchTimeout = null;
 
     function fmt(epoch) {
       if (!epoch) return '—';
@@ -983,6 +1209,70 @@
       })(t0);
     }
 
+    const KIND_ICONS = {
+      file_read: '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>',
+      file_edit: '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>',
+      file_write: '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>',
+      bash_cmd: '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>',
+      decision: '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>',
+      prompt: '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+    };
+
+    function kindIcon(kind) {
+      const svg = KIND_ICONS[kind] || '';
+      return '<span class="kind-icon">' + svg + esc(kind) + '</span>';
+    }
+
+    function getArrow(col) {
+      const isActive = obsSortBy === col || (col === 'time' && !obsSortBy);
+      if (!isActive) return '↓';
+      return obsSortDir === 'asc' ? '↑' : '↓';
+    }
+
+    async function loadObservations() {
+      if (!currentProject) return;
+      const enc = encodeURIComponent(currentProject);
+      let url = '/api/observations?project=' + enc + '&limit=100';
+      if (obsQuery) url += '&query=' + encodeURIComponent(obsQuery);
+      if (obsSig) url += '&significance=' + encodeURIComponent(obsSig);
+      if (obsDateFrom) url += '&dateFrom=' + obsDateFrom;
+      if (obsDateTo) url += '&dateTo=' + obsDateTo;
+      if (obsSortBy) url += '&sortBy=' + obsSortBy;
+      if (obsSortDir) url += '&sortDir=' + obsSortDir;
+      const observations = await fetchJson(url);
+      renderObservations(observations);
+    }
+
+    function renderObservations(observations) {
+      const obsDiv = document.getElementById('observations-table');
+      document.getElementById('obs-count').textContent = observations.length ? observations.length + ' shown' : '';
+      if (observations.length === 0) {
+        obsDiv.innerHTML = '<div class="empty">No observations match your filters</div>';
+        return;
+      }
+      const timeClass = (obsSortBy === 'time' || !obsSortBy) ? ' sorted' : '';
+      const idClass = obsSortBy === 'id' ? ' sorted' : '';
+      let html = '<table class="tbl"><tr>' +
+        '<th class="sortable' + idClass + '" data-sort="id">ID<span class="sort-arrow">' + getArrow('id') + '</span></th>' +
+        '<th>Significance</th>' +
+        '<th>Kind</th>' +
+        '<th>Title</th>' +
+        '<th class="sortable' + timeClass + '" style="text-align:right" data-sort="time">Time<span class="sort-arrow">' + getArrow('time') + '</span></th>' +
+        '</tr>';
+      observations.forEach(function(o, i) {
+        var delay = isFirstLoad ? ' style="animation-delay:' + (i * 20) + 'ms"' : '';
+        html += '<tr class="o-row' + (isFirstLoad ? ' row-anim' : '') + '" data-s="' + o.significance + '"' + delay + '>' +
+          '<td class="o-id">#' + o.id + '</td>' +
+          '<td><span class="' + sgClass(o.significance) + '">' + o.significance + '</span></td>' +
+          '<td class="o-kind">' + kindIcon(o.kind) + '</td>' +
+          '<td class="o-title">' + esc(o.title) + '</td>' +
+          '<td class="o-time">' + fmt(o.created_at_epoch) + '</td>' +
+          '</tr>';
+      });
+      html += '</table>';
+      obsDiv.innerHTML = html;
+    }
+
     async function loadProjects() {
       const projects = await fetchJson('/api/projects');
       const sel = document.getElementById('project-select');
@@ -1002,6 +1292,17 @@
     function switchProject() {
       currentProject = document.getElementById('project-select').value;
       isFirstLoad = true;
+      obsQuery = '';
+      obsSig = '';
+      obsDateFrom = '';
+      obsDateTo = '';
+      obsSortBy = '';
+      obsSortDir = '';
+      document.getElementById('obs-search').value = '';
+      document.getElementById('date-from').value = '';
+      document.getElementById('date-to').value = '';
+      document.querySelectorAll('.sig-chip').forEach(function(c) { c.classList.remove('active'); });
+      document.querySelector('.sig-chip[data-sig="all"]').classList.add('active');
       loadDashboard();
     }
 
@@ -1009,9 +1310,8 @@
       if (!currentProject) return;
       const enc = encodeURIComponent(currentProject);
 
-      const [overview, observations, sessions] = await Promise.all([
+      const [overview, sessions] = await Promise.all([
         fetchJson('/api/overview?project=' + enc),
-        fetchJson('/api/observations?project=' + enc + '&limit=50'),
         fetchJson('/api/sessions?project=' + enc + '&limit=20'),
       ]);
 
@@ -1032,26 +1332,7 @@
       animateVal(document.getElementById('v-high'), sig.high || 0);
       animateVal(document.getElementById('v-inj'), stats.context_injections || 0);
 
-      // Observations
-      const obsDiv = document.getElementById('observations-table');
-      document.getElementById('obs-count').textContent = observations.length ? observations.length + ' shown' : '';
-      if (observations.length === 0) {
-        obsDiv.innerHTML = '<div class="empty">No observations yet</div>';
-      } else {
-        let html = '<table class="tbl"><tr><th>ID</th><th>Significance</th><th>Kind</th><th>Title</th><th style="text-align:right">Time</th></tr>';
-        observations.forEach((o, i) => {
-          const delay = isFirstLoad ? `style="animation-delay:${i * 20}ms"` : '';
-          html += `<tr class="o-row${isFirstLoad ? ' row-anim' : ''}" data-s="${o.significance}" ${delay}>
-        <td class="o-id">#${o.id}</td>
-        <td><span class="${sgClass(o.significance)}">${o.significance}</span></td>
-        <td class="o-kind">${o.kind}</td>
-        <td class="o-title">${esc(o.title)}</td>
-        <td class="o-time">${fmt(o.created_at_epoch)}</td>
-      </tr>`;
-        });
-        html += '</table>';
-        obsDiv.innerHTML = html;
-      }
+      await loadObservations();
 
       // Sessions
       const sessDiv = document.getElementById('sessions-table');
@@ -1096,6 +1377,48 @@
         document.querySelectorAll('.data-zone').forEach(el => el.classList.remove('updating'));
       });
     }
+
+    // Filter event handlers
+    document.getElementById('obs-search').addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      var input = this;
+      searchTimeout = setTimeout(function() {
+        obsQuery = input.value.trim();
+        loadObservations();
+      }, 300);
+    });
+
+    document.getElementById('date-from').addEventListener('change', function() {
+      obsDateFrom = this.value ? new Date(this.value + 'T00:00:00').getTime() : '';
+      loadObservations();
+    });
+
+    document.getElementById('date-to').addEventListener('change', function() {
+      obsDateTo = this.value ? new Date(this.value + 'T23:59:59.999').getTime() : '';
+      loadObservations();
+    });
+
+    document.getElementById('sig-chips').addEventListener('click', function(e) {
+      var chip = e.target.closest('.sig-chip');
+      if (!chip) return;
+      this.querySelectorAll('.sig-chip').forEach(function(c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+      obsSig = chip.dataset.sig === 'all' ? '' : chip.dataset.sig;
+      loadObservations();
+    });
+
+    document.getElementById('observations-table').addEventListener('click', function(e) {
+      var th = e.target.closest('th.sortable');
+      if (!th) return;
+      var col = th.dataset.sort;
+      if (obsSortBy === col) {
+        obsSortDir = obsSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        obsSortBy = col;
+        obsSortDir = 'desc';
+      }
+      loadObservations();
+    });
 
     // Initial load
     refresh();

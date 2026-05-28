@@ -6,6 +6,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/firstcontributions/open-source-badges"><img src="https://firstcontributions.github.io/open-source-badges/badges/open-source-v1/open-source.svg" alt="Open Source Love"/></a>
   <a href="https://www.npmjs.com/package/@anandt/deja"><img src="https://img.shields.io/npm/v/@anandt/deja.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@anandt/deja"><img src="https://img.shields.io/npm/dm/@anandt/deja.svg" alt="monthly downloads"></a>
   <a href="https://github.com/anandmt/deja/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@anandt/deja.svg" alt="license"></a>

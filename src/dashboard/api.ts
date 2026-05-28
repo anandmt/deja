@@ -3,6 +3,7 @@ import type { Database } from "bun:sqlite";
 export interface Overview {
   sessions: number;
   observations: number;
+  active_sessions: number;
   by_significance: Record<string, number>;
   stats: Record<string, number>;
 }
@@ -34,7 +35,11 @@ export function getOverview(db: Database, project: string): Overview {
     stats[row.metric] = row.value;
   }
 
-  return { sessions, observations, by_significance, stats };
+  const active_sessions = (db.prepare(
+    "SELECT COUNT(*) as cnt FROM sessions WHERE project = ? AND ended_at_epoch IS NULL",
+  ).get(project) as { cnt: number }).cnt;
+
+  return { sessions, observations, active_sessions, by_significance, stats };
 }
 
 export interface RecentObservation {
@@ -81,4 +86,35 @@ export function getProjects(db: Database): ProjectRow[] {
     `SELECT project, COUNT(*) as session_count, MAX(started_at_epoch) as last_active
      FROM sessions GROUP BY project ORDER BY last_active DESC`,
   ).all() as ProjectRow[];
+}
+
+export interface DeleteResult {
+  observations: number;
+  sessions: number;
+}
+
+export function deleteProject(db: Database, project: string): DeleteResult {
+  const countObs = db.prepare("SELECT COUNT(*) as cnt FROM observations WHERE project = ?");
+  const countSess = db.prepare("SELECT COUNT(*) as cnt FROM sessions WHERE project = ?");
+  const delObs = db.prepare("DELETE FROM observations WHERE project = ?");
+  const delSess = db.prepare("DELETE FROM sessions WHERE project = ?");
+  const delStats = db.prepare("DELETE FROM stats WHERE project = ?");
+
+  const tx = db.transaction(() => {
+    const observations = (countObs.get(project) as { cnt: number }).cnt;
+    const sessions = (countSess.get(project) as { cnt: number }).cnt;
+    delObs.run(project);
+    delSess.run(project);
+    delStats.run(project);
+    return { observations, sessions };
+  });
+
+  return tx();
+}
+
+export function hasActiveSessions(db: Database, project: string): boolean {
+  const row = db.prepare(
+    "SELECT COUNT(*) as cnt FROM sessions WHERE project = ? AND ended_at_epoch IS NULL",
+  ).get(project) as { cnt: number };
+  return row.cnt > 0;
 }

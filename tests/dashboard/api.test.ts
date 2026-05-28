@@ -2,7 +2,7 @@ import { describe, test, expect, afterEach } from "bun:test";
 import { Database } from "bun:sqlite";
 import { tmpDb, cleanupDb } from "../../src/test/helpers";
 import { runMigrations } from "../../src/kernel/migrations";
-import { getOverview, getRecentObservations, getSessions, getProjects } from "../../src/dashboard/api";
+import { getOverview, getRecentObservations, getSessions, getProjects, deleteProject, hasActiveSessions } from "../../src/dashboard/api";
 
 function insertSession(db: Database, id: string, project: string, summary: string | null = null, startedAt: number = Date.now()): void {
   db.prepare("INSERT INTO sessions (id, project, started_at_epoch, ended_at_epoch, summary) VALUES (?, ?, ?, ?, ?)")
@@ -126,5 +126,101 @@ describe("getProjects", () => {
     runMigrations(db);
     const results = getProjects(db);
     expect(results).toEqual([]);
+  });
+});
+
+describe("deleteProject", () => {
+  let db: Database;
+  afterEach(() => { if (db) cleanupDb(db); });
+
+  test("deletes all observations, sessions, and stats for a project", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project-a");
+    insertSession(db, "s2", "/project-b");
+    insertObs(db, { sessionId: "s1", project: "/project-a", significance: "high", kind: "decision", title: "D1" });
+    insertObs(db, { sessionId: "s1", project: "/project-a", significance: "medium", kind: "file_edit", title: "E1" });
+    insertObs(db, { sessionId: "s2", project: "/project-b", significance: "low", kind: "file_read", title: "R1" });
+    db.prepare("INSERT INTO stats (project, metric, value) VALUES (?, ?, ?)").run("/project-a", "context_injections", 5);
+    db.prepare("INSERT INTO stats (project, metric, value) VALUES (?, ?, ?)").run("/project-b", "context_injections", 3);
+
+    const result = deleteProject(db, "/project-a");
+
+    expect(result.observations).toBe(2);
+    expect(result.sessions).toBe(1);
+
+    expect(getProjects(db).find(p => p.project === "/project-a")).toBeUndefined();
+    expect(getOverview(db, "/project-a").observations).toBe(0);
+    expect(getOverview(db, "/project-a").sessions).toBe(0);
+
+    expect(getOverview(db, "/project-b").observations).toBe(1);
+    expect(getOverview(db, "/project-b").sessions).toBe(1);
+  });
+
+  test("cleans up FTS index when observations are deleted", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+    insertObs(db, { sessionId: "s1", project: "/project", significance: "high", kind: "decision", title: "unique_searchable_term" });
+
+    const before = db.prepare("SELECT COUNT(*) as cnt FROM observations_fts WHERE title MATCH ?").get("unique_searchable_term") as { cnt: number };
+    expect(before.cnt).toBe(1);
+
+    deleteProject(db, "/project");
+
+    const after = db.prepare("SELECT COUNT(*) as cnt FROM observations_fts WHERE title MATCH ?").get("unique_searchable_term") as { cnt: number };
+    expect(after.cnt).toBe(0);
+  });
+
+  test("returns zero counts for non-existent project", () => {
+    db = tmpDb();
+    runMigrations(db);
+    const result = deleteProject(db, "/non-existent");
+    expect(result.observations).toBe(0);
+    expect(result.sessions).toBe(0);
+  });
+});
+
+describe("hasActiveSessions", () => {
+  let db: Database;
+  afterEach(() => { if (db) cleanupDb(db); });
+
+  test("returns true when a session has no ended_at_epoch", () => {
+    db = tmpDb();
+    runMigrations(db);
+    db.prepare("INSERT INTO sessions (id, project, started_at_epoch) VALUES (?, ?, ?)")
+      .run("s1", "/project", Date.now());
+
+    expect(hasActiveSessions(db, "/project")).toBe(true);
+  });
+
+  test("returns false when all sessions have ended", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+
+    expect(hasActiveSessions(db, "/project")).toBe(false);
+  });
+
+  test("returns false for non-existent project", () => {
+    db = tmpDb();
+    runMigrations(db);
+    expect(hasActiveSessions(db, "/nope")).toBe(false);
+  });
+});
+
+describe("getOverview — active_sessions", () => {
+  let db: Database;
+  afterEach(() => { if (db) cleanupDb(db); });
+
+  test("includes active_sessions count in overview", () => {
+    db = tmpDb();
+    runMigrations(db);
+    insertSession(db, "s1", "/project");
+    db.prepare("INSERT INTO sessions (id, project, started_at_epoch) VALUES (?, ?, ?)")
+      .run("s2", "/project", Date.now());
+
+    const result = getOverview(db, "/project");
+    expect(result.active_sessions).toBe(1);
   });
 });

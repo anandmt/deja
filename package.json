@@ -1,6 +1,6 @@
 {
   "name": "@anandt/deja",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Claude Code forgets everything between sessions. deja fixes that.",
   "type": "module",
   "main": "dist/worker/main.js",
@@ -38,7 +38,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/anandmt/deja.git"
+    "url": "git+https://github.com/anandmt/deja.git"
   },
   "homepage": "https://github.com/anandmt/deja#readme",
   "dependencies": {

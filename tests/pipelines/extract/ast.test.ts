@@ -101,6 +101,81 @@ class PaymentGateway:
     expect(result).toEqual([]);
   });
 
+  test("extracts Go functions and type declarations", async () => {
+    const { manager, dir } = await setupManager("go");
+    cleanupDir = dir;
+
+    const code = `package main
+
+func HandleRequest(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+}
+
+type Config struct {
+	Port int
+	Host string
+}
+
+type Handler interface {
+	ServeHTTP()
+}
+`;
+
+    const symbols = await extractAst(code, "/project/main.go", manager);
+    expect(symbols).not.toBeNull();
+    expect(symbols).toContain("HandleRequest");
+    expect(symbols).toContain("Config");
+    expect(symbols).toContain("Handler");
+  });
+
+  test("extracts Rust functions, structs, and enums", async () => {
+    const { manager, dir } = await setupManager("rust");
+    cleanupDir = dir;
+
+    const code = `
+pub fn process_event(ev: &Event) -> Result<()> {
+    Ok(())
+}
+
+struct Config {
+    port: u16,
+}
+
+enum Status {
+    Active,
+    Inactive,
+}
+`;
+
+    const symbols = await extractAst(code, "/project/src/main.rs", manager);
+    expect(symbols).not.toBeNull();
+    expect(symbols).toContain("process_event");
+    expect(symbols).toContain("Config");
+    expect(symbols).toContain("Status");
+  });
+
+  test("extracts Java classes and methods", async () => {
+    const { manager, dir } = await setupManager("java");
+    cleanupDir = dir;
+
+    const code = `
+public class UserService {
+    public User findById(String id) {
+        return null;
+    }
+
+    public void deleteUser(String id) {
+    }
+}
+`;
+
+    const symbols = await extractAst(code, "/project/UserService.java", manager);
+    expect(symbols).not.toBeNull();
+    expect(symbols).toContain("UserService");
+    expect(symbols).toContain("findById");
+    expect(symbols).toContain("deleteUser");
+  });
+
   test("deduplicates symbol names", async () => {
     const { manager, dir } = await setupManager("typescript");
     cleanupDir = dir;

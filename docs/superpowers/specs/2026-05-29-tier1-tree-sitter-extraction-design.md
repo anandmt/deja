@@ -49,6 +49,10 @@ Normalized Event
 
 This means ast.ts has a narrow interface: it takes file content and returns `string[]` (symbol names) or `null` (fallback). It does not produce a full `ExtractedObservation`.
 
+**File content source.** The hook captures different data per tool type, so ast.ts resolves content differently:
+- **Write events:** full file content is in `input.content` of the raw event.
+- **Edit events:** the raw event contains only `old_string`/`new_string` fragments, which tree-sitter can't parse. Instead, ast.ts reads the file from disk using `file_path` from the normalized event. This is safe — the read happens in the background worker (not in a hook), the file is still on disk, and reads take <1ms for files under the 500KB size guard.
+
 The rest of the pipeline (store, FTS indexing) is unchanged.
 
 ### Grammar Manager (`src/pipelines/extract/grammar.ts`)
@@ -140,7 +144,7 @@ If a grammar uses unconventional node names, that symbol is missed — the heuri
 // Pipeline merges into the heuristic-produced ExtractedObservation:
 {
   kind: "file_edit",
-  title: "Edit auth.ts — validateToken, refreshSession, AuthService",  // rebuilt with AST symbols
+  title: "Edit auth.ts — validateToken, refreshSession, AuthService",  // rebuilt with AST symbols (max 5, then "+ N more")
   content: "...",              // from heuristic
   facts: ["validateToken", "refreshSession", "AuthService"],           // overwritten by AST
   concepts: ["authentication", "session"],                             // from heuristic (path analysis)
@@ -152,6 +156,8 @@ If a grammar uses unconventional node names, that symbol is missed — the heuri
 **Event types processed.** `ast.ts` runs only on `file_edit` and `file_write` events (where file content is available and the observation represents a code change). `file_read` events are not processed — reads don't change code, and indexing every read file would add noise without improving memory quality. `bash_cmd` and `prompt` events have no file content to parse.
 
 **File size guard.** Skip AST extraction for files larger than 500KB. Large files (minified bundles, generated code, data files) waste CPU for symbols nobody cares about. The heuristic fallback handles these.
+
+**Title length cap.** The rebuilt title includes at most 5 symbol names. If more symbols are extracted, the title reads e.g. `"Edit auth.ts — validateToken, refreshSession, AuthService + 37 more"`. All symbols are stored in `facts[]` for FTS search regardless of the title cap.
 
 ### Configuration
 

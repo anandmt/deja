@@ -31,6 +31,7 @@ Normalized Event
     ├─ No file content? ──────────▶ heuristic.ts (full extraction)
     ├─ tiers.ast disabled? ───────▶ heuristic.ts (full extraction)
     ├─ kind is bash_cmd or prompt? ▶ heuristic.ts (no file to parse)
+    ├─ File > 500KB? ─────────────▶ heuristic.ts (too large to parse)
     ├─ No grammar available? ─────▶ heuristic.ts (full extraction)
     ├─ Parse/extract fails? ──────▶ heuristic.ts (full extraction)
     │
@@ -58,12 +59,14 @@ Manages tree-sitter WASM grammars. Three responsibilities:
 
 **Lazy download.** On first encounter with a language, downloads the WASM grammar (~200-500KB) and saves to `~/.deja/grammars/<language>.wasm`. No upfront scanning, no install-time setup.
 
-Download source: the [`tree-sitter-wasms`](https://www.npmjs.com/package/tree-sitter-wasms) npm package provides pre-built WASM grammars with consistent ABI versions. At runtime, grammars are fetched from the npm CDN (`https://unpkg.com/tree-sitter-wasms@latest/out/`). This avoids ABI mismatches between `web-tree-sitter` and individual grammar repos.
+Download source: the [`tree-sitter-wasms`](https://www.npmjs.com/package/tree-sitter-wasms) npm package provides pre-built WASM grammars with consistent ABI versions. Grammars are fetched from the npm CDN with a **pinned version** (e.g., `https://unpkg.com/tree-sitter-wasms@0.25.3/out/tree-sitter-<language>.wasm`). The pinned version is stored as a constant in `grammar.ts` and updated manually when `web-tree-sitter` is upgraded.
+
+**Self-hosting consideration:** If unpkg availability or supply chain risk proves problematic, migrate WASM files to GitHub Releases on the Deja repo. The download URL is a single constant — switching sources is a one-line change.
 
 Download behavior:
 - HTTP timeout: 10 seconds
 - Retries once on network error or 5xx response
-- On 404 (grammar does not exist for this language): caches a negative marker file (`~/.deja/grammars/<language>.none`) to prevent repeated download attempts. Negative markers are checked before any HTTP call.
+- On 404 (grammar does not exist for this language): caches a negative marker file (`~/.deja/grammars/<language>.none`) to prevent repeated download attempts. Negative markers are checked before any HTTP call. **Negative markers expire after 30 days** (checked via file mtime) to allow rediscovery when new grammars are published.
 - On final failure: returns null, triggering heuristic fallback. Logs a warning at `debug` level.
 - Uses Bun's built-in `fetch`.
 
@@ -93,7 +96,7 @@ DECLARATION_KEYWORDS = [
   "interface", "enum", "trait", "type", "module", "impl"
 ]
 
-For each root-level node (and one level deep for class bodies):
+For each root-level node:
   if node.type contains any DECLARATION_KEYWORD:
     name = node.childForFieldName("name")
     if name exists:
@@ -104,6 +107,19 @@ For each root-level node (and one level deep for class bodies):
       for each child of node:
         if child has field "name":
           symbols.push(child.childForFieldName("name").text)
+
+  // Recurse into class/struct/impl/module bodies for member declarations.
+  // "Body node" = the `body` field of any node whose type contains
+  // "class", "struct", "impl", or "module". This avoids walking into
+  // object literals or function bodies.
+  if node.type contains ("class" | "struct" | "impl" | "module"):
+    body = node.childForFieldName("body")
+    if body exists:
+      for each child of body:
+        if child.type contains any DECLARATION_KEYWORD:
+          name = child.childForFieldName("name")
+          if name exists:
+            symbols.push(name.text)
 ```
 
 This catches:
@@ -135,6 +151,8 @@ If a grammar uses unconventional node names, that symbol is missed — the heuri
 
 **Event types processed.** `ast.ts` runs only on `file_edit` and `file_write` events (where file content is available and the observation represents a code change). `file_read` events are not processed — reads don't change code, and indexing every read file would add noise without improving memory quality. `bash_cmd` and `prompt` events have no file content to parse.
 
+**File size guard.** Skip AST extraction for files larger than 500KB. Large files (minified bundles, generated code, data files) waste CPU for symbols nobody cares about. The heuristic fallback handles these.
+
 ### Configuration
 
 The `tiers.ast` setting already exists in Deja's config (`src/kernel/settings.ts`), defaulting to `false`. When enabled, the pipeline uses `ast.ts` as the primary extractor. When disabled, behavior is identical to today.
@@ -143,9 +161,20 @@ No new settings required.
 
 ## Dependency
 
-**`web-tree-sitter`** (`^0.25.x`) — the WASM build of tree-sitter. Pure WASM, no native bindings, fully compatible with Bun. ~500KB. Pinned to 0.25.x for ABI compatibility with `tree-sitter-wasms` pre-built grammars.
+**`web-tree-sitter`** (`^0.25.x`) — the WASM build of tree-sitter. Pure WASM, no native bindings. ~500KB. Pinned to 0.25.x for ABI compatibility with `tree-sitter-wasms` pre-built grammars.
 
 Deja's runtime dependencies go from one (`@modelcontextprotocol/sdk`) to two. No other new dependencies.
+
+### Bun Compatibility (Must Verify)
+
+The spec assumes `web-tree-sitter` works under Bun's WASM runtime. This has not been verified. **Before implementation begins**, run a proof-of-concept spike:
+
+1. Install `web-tree-sitter` in the Deja repo
+2. Download a TypeScript grammar WASM
+3. Parse a sample file, extract a function name
+4. Run with `bun run`
+
+If the spike fails (e.g., Bun's `WebAssembly.instantiate` or filesystem access from WASM has edge cases), the fallback strategy is to use native `tree-sitter` bindings via Bun's Node.js compatibility layer, or to run tree-sitter in a subprocess. The spec's architecture (grammar manager + narrow `string[] | null` interface) isolates this risk — only `grammar.ts` changes.
 
 ## Performance
 

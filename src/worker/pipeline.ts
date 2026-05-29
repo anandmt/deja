@@ -6,9 +6,15 @@ import type {
   Settings,
 } from "../types";
 import type { Logger } from "../kernel/log";
+import type { GrammarManager } from "../pipelines/extract/grammar";
 import { classify } from "../pipelines/ingest/classify";
 import { normalize } from "../pipelines/ingest/normalize";
 import { extractHeuristic } from "../pipelines/extract/heuristic";
+import { extractAst } from "../pipelines/extract/ast";
+import { readFileSync, statSync } from "fs";
+
+const MAX_AST_FILE_SIZE = 500 * 1024;
+const MAX_TITLE_SYMBOLS = 5;
 
 export class Pipeline {
   private recentCommands = new Set<string>();
@@ -25,6 +31,7 @@ export class Pipeline {
     db: Database,
     private settings: Settings,
     private log: Logger,
+    private grammarManager?: GrammarManager,
   ) {
     this.db = db;
     this.stmtEnsureSession = db.prepare(
@@ -47,7 +54,7 @@ export class Pipeline {
     );
   }
 
-  processEvent(payload: HookPayload, batch: BatchAnnotation): void {
+  async processEvent(payload: HookPayload, batch: BatchAnnotation): Promise<void> {
     if (payload.type === "SessionStart") {
       this.stmtEnsureSession.run(payload.session_id, payload.cwd, Date.now());
       this.log("debug", "pipeline", `Session started: ${payload.session_id}`);
@@ -85,6 +92,28 @@ export class Pipeline {
 
     const normalized = normalize(payload);
     const extracted = extractHeuristic(normalized, classified);
+
+    if (
+      this.settings.tiers.ast &&
+      this.grammarManager &&
+      (normalized.action === "edit" || normalized.action === "write")
+    ) {
+      const content = this.resolveFileContent(normalized);
+      if (content && content.length <= MAX_AST_FILE_SIZE) {
+        const filePath = normalized.files[0];
+        if (filePath) {
+          try {
+            const symbols = await extractAst(content, filePath, this.grammarManager);
+            if (symbols && symbols.length > 0) {
+              extracted.facts = symbols;
+              extracted.title = this.buildAstTitle(normalized.action, filePath, symbols);
+            }
+          } catch {
+            // AST failed silently, heuristic extraction stands
+          }
+        }
+      }
+    }
 
     this.stmtInsertObs.run(
       payload.session_id,
@@ -130,6 +159,38 @@ export class Pipeline {
 
     const summary = parts.join(". ") + ".";
     return summary.length > 500 ? summary.slice(0, 497) + "..." : summary;
+  }
+
+  private resolveFileContent(normalized: { action: string; files: string[]; raw_event: string }): string | null {
+    if (normalized.action === "write") {
+      try {
+        const raw = JSON.parse(normalized.raw_event);
+        return (raw.input?.content ?? null) as string | null;
+      } catch {
+        return null;
+      }
+    }
+
+    const filePath = normalized.files[0];
+    if (!filePath) return null;
+    try {
+      const stat = statSync(filePath);
+      if (stat.size > MAX_AST_FILE_SIZE) return null;
+      return readFileSync(filePath, "utf-8");
+    } catch {
+      return null;
+    }
+  }
+
+  private buildAstTitle(action: string, filePath: string, symbols: string[]): string {
+    const lastSlash = filePath.lastIndexOf("/");
+    const filename = lastSlash === -1 ? filePath : filePath.slice(lastSlash + 1);
+    const prefix = action === "write" ? "Created" : "Edit";
+    const shown = symbols.slice(0, MAX_TITLE_SYMBOLS);
+    const suffix = symbols.length > MAX_TITLE_SYMBOLS
+      ? ` + ${symbols.length - MAX_TITLE_SYMBOLS} more`
+      : "";
+    return `${prefix} ${filename} — ${shown.join(", ")}${suffix}`;
   }
 
   private trackState(payload: HookPayload): void {

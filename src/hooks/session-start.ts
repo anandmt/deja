@@ -7,6 +7,7 @@ import { readSettings } from "../kernel/settings";
 import { generateContext } from "../context/generator";
 import { mapPayload } from "./map-payload";
 import { ensureWorker } from "./ensure-worker";
+import { ensureDashboard } from "./ensure-dashboard";
 import { trySendEvent } from "./send";
 
 const raw = JSON.parse(await Bun.stdin.text());
@@ -27,6 +28,13 @@ await ensureWorker({
   sockPath: paths.workerSock,
   lockPath: paths.workerLock,
   workerScript,
+});
+
+const dashboardScript = resolveScript(import.meta.dir, "..", "dashboard", "serve");
+ensureDashboard({
+  pidPath: paths.dashboardPid,
+  lockPath: paths.dashboardLock,
+  dashboardScript,
 });
 
 let context = "";

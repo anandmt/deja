@@ -3,9 +3,12 @@ import { runMigrations } from "../kernel/migrations";
 import { getOverview, getRecentObservations, getSessions, getProjects, searchObservations, deleteProject } from "./api";
 import { join, resolve } from "path";
 import { homedir } from "os";
+import { writeFileSync, unlinkSync } from "fs";
 
-const dbPath = process.env.DEJA_DB_PATH ?? join(homedir(), ".deja", "memory.db");
+const dejaDir = join(homedir(), ".deja");
+const dbPath = process.env.DEJA_DB_PATH ?? join(dejaDir, "memory.db");
 const port = parseInt(process.env.DEJA_DASHBOARD_PORT ?? "19533", 10);
+const pidPath = join(dejaDir, "dashboard.pid");
 const htmlPath = resolve(import.meta.dir, "index.html");
 
 const db = openDb(dbPath);
@@ -165,5 +168,14 @@ Bun.serve({
     return new Response("Not Found", { status: 404 });
   },
 });
+
+writeFileSync(pidPath, String(process.pid));
+
+function shutdown() {
+  try { unlinkSync(pidPath); } catch {}
+  process.exit(0);
+}
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
 
 console.log(`deja dashboard running at http://localhost:${port}`);

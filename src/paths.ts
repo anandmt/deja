@@ -11,6 +11,8 @@ export const paths = {
   workerSock: join(DEJA_DIR, "worker.sock"),
   workerPid: join(DEJA_DIR, "worker.pid"),
   workerLock: join(DEJA_DIR, "worker.lock"),
+  dashboardPid: join(DEJA_DIR, "dashboard.pid"),
+  dashboardLock: join(DEJA_DIR, "dashboard.lock"),
   pendingWal: join(DEJA_DIR, "pending.wal"),
   walLock: join(DEJA_DIR, "pending.wal.lock"),
   logsDir: join(DEJA_DIR, "logs"),

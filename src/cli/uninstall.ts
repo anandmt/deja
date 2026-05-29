@@ -20,6 +20,18 @@ function stopWorker(): void {
 
 function stopDashboard(): void {
   try {
+    if (existsSync(paths.dashboardPid)) {
+      const pid = parseInt(readFileSync(paths.dashboardPid, "utf-8").trim(), 10);
+      if (!isNaN(pid)) {
+        process.kill(pid, "SIGTERM");
+        console.log(`  Stopped dashboard process (PID ${pid})`);
+        return;
+      }
+    }
+  } catch (e: any) {
+    if (e.code !== "ESRCH") { /* fall through to lsof */ }
+  }
+  try {
     const pids = execSync("lsof -ti:19533 2>/dev/null", { encoding: "utf-8" }).trim();
     if (!pids) return;
     for (const pid of pids.split("\n")) {

@@ -39,7 +39,19 @@ switch (command) {
   case "install": {
     install();
     cleanupLegacy(process.cwd());
-    console.log("deja installed globally (~/.claude/settings.json)");
+    console.log(`
++- d e j a ------------------------------------+
+|                                               |
+|  Installed successfully.                      |
+|  Start a new Claude Code session to begin.    |
+|                                               |
+|  Dashboard:  deja dashboard                   |
+|  Search:     deja search <query>              |
+|  Stats:      deja stats                       |
+|  Help:       deja --help                      |
+|                                               |
++-----------------------------------------------+
+`);
     break;
   }
 

@@ -1,5 +1,8 @@
-import { describe, test, expect } from "bun:test";
-import { detectLanguage } from "../../../src/pipelines/extract/grammar";
+import { describe, test, expect, afterEach } from "bun:test";
+import { detectLanguage, GrammarManager } from "../../../src/pipelines/extract/grammar";
+import { mkdtempSync, existsSync, writeFileSync, rmSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
 
 describe("detectLanguage", () => {
   test("maps .ts to typescript", () => {
@@ -68,5 +71,63 @@ describe("detectLanguage", () => {
 
   test("handles dotfiles", () => {
     expect(detectLanguage("/project/.gitignore")).toBeNull();
+  });
+});
+
+describe("GrammarManager", () => {
+  let grammarDir: string;
+
+  afterEach(() => {
+    if (grammarDir) rmSync(grammarDir, { recursive: true, force: true });
+  });
+
+  test("returns null for unknown language", async () => {
+    grammarDir = mkdtempSync(join(tmpdir(), "deja-grammar-test-"));
+    const manager = new GrammarManager(grammarDir);
+    const result = await manager.getParser("/project/data.xyz");
+    expect(result).toBeNull();
+  });
+
+  test("loads parser from disk-cached .wasm file", async () => {
+    grammarDir = mkdtempSync(join(tmpdir(), "deja-grammar-test-"));
+    const resp = await fetch(
+      "https://unpkg.com/tree-sitter-wasms@0.1.13/out/tree-sitter-typescript.wasm"
+    );
+    const wasmBytes = await resp.arrayBuffer();
+    writeFileSync(join(grammarDir, "tree-sitter-typescript.wasm"), Buffer.from(wasmBytes));
+
+    const manager = new GrammarManager(grammarDir);
+    const parser = await manager.getParser("/project/src/auth.ts");
+    expect(parser).not.toBeNull();
+  });
+
+  test("returns null and creates .none marker on 404", async () => {
+    grammarDir = mkdtempSync(join(tmpdir(), "deja-grammar-test-"));
+    const manager = new GrammarManager(grammarDir);
+    const result = await manager.getParserForLanguage("fakefakelang");
+    expect(result).toBeNull();
+    expect(existsSync(join(grammarDir, "tree-sitter-fakefakelang.none"))).toBe(true);
+  });
+
+  test("skips download when .none marker exists and is fresh", async () => {
+    grammarDir = mkdtempSync(join(tmpdir(), "deja-grammar-test-"));
+    writeFileSync(join(grammarDir, "tree-sitter-fakefakelang.none"), "");
+    const manager = new GrammarManager(grammarDir);
+    const result = await manager.getParserForLanguage("fakefakelang");
+    expect(result).toBeNull();
+  });
+
+  test("memory cache returns same parser instance on second call", async () => {
+    grammarDir = mkdtempSync(join(tmpdir(), "deja-grammar-test-"));
+    const resp = await fetch(
+      "https://unpkg.com/tree-sitter-wasms@0.1.13/out/tree-sitter-typescript.wasm"
+    );
+    const wasmBytes = await resp.arrayBuffer();
+    writeFileSync(join(grammarDir, "tree-sitter-typescript.wasm"), Buffer.from(wasmBytes));
+
+    const manager = new GrammarManager(grammarDir);
+    const parser1 = await manager.getParser("/project/a.ts");
+    const parser2 = await manager.getParser("/project/b.tsx");
+    expect(parser1).toBe(parser2);
   });
 });

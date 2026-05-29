@@ -18,7 +18,17 @@
 </p>
 
 <p align="center">
+  <a href="https://youtu.be/TyEcIwfRqOo">
+    <img src="https://img.youtube.com/vi/TyEcIwfRqOo/maxresdefault.jpg" alt="deja demo video" width="600">
+  </a>
+</p>
+<p align="center">
+  <a href="https://youtu.be/TyEcIwfRqOo">Watch the demo</a>
+</p>
+
+<p align="center">
   <a href="#install">Install</a> &middot;
+  <a href="https://youtu.be/TyEcIwfRqOo">Demo</a> &middot;
   <a href="#what-gets-captured">Captured Events</a> &middot;
   <a href="#progressive-enhancement">Tiers</a> &middot;
   <a href="#architecture">Architecture</a> &middot;

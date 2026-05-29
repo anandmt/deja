@@ -135,7 +135,7 @@ describe("uninstall", () => {
     expect(before.hooks).toBeDefined();
     expect(before.mcpServers.deja).toBeDefined();
 
-    uninstall(tmpDir);
+    uninstall({ overrideClaudeDir: tmpDir });
 
     const after = JSON.parse(readFileSync(join(tmpDir, "settings.json"), "utf-8"));
     expect(after.hooks).toBeUndefined();
@@ -156,7 +156,7 @@ describe("uninstall", () => {
       }),
     );
 
-    uninstall(tmpDir);
+    uninstall({ overrideClaudeDir: tmpDir });
 
     const settings = JSON.parse(readFileSync(join(tmpDir, "settings.json"), "utf-8"));
     expect(settings.hooks.PreToolUse).toBeDefined();
@@ -168,6 +168,6 @@ describe("uninstall", () => {
 
   test("is safe when settings.json doesn't exist", () => {
     tmpDir = makeTmpDir();
-    expect(() => uninstall(tmpDir)).not.toThrow();
+    expect(() => uninstall({ overrideClaudeDir: tmpDir })).not.toThrow();
   });
 });

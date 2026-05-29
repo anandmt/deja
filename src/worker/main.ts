@@ -1,4 +1,6 @@
 import { mkdirSync, writeFileSync, unlinkSync } from "fs";
+import { join } from "path";
+import { homedir } from "os";
 import { paths } from "../paths";
 import { openDb } from "../kernel/db";
 import { runMigrations } from "../kernel/migrations";
@@ -8,9 +10,10 @@ import { drainWal } from "../kernel/wal";
 import { SocketServer } from "../kernel/socket";
 import { Debouncer } from "../pipelines/ingest/debounce";
 import { Pipeline } from "./pipeline";
+import { GrammarManager } from "../pipelines/extract/grammar";
 import type { HookPayload, BatchAnnotation } from "../types";
 
-function main(): void {
+async function main(): Promise<void> {
   mkdirSync(paths.dejaDir, { recursive: true });
   mkdirSync(paths.logsDir, { recursive: true });
 
@@ -23,7 +26,11 @@ function main(): void {
 
   rotateOldLogs(paths.logsDir, settings.log_max_days);
 
-  const pipeline = new Pipeline(db, settings, log);
+  const grammarManager = settings.tiers.ast
+    ? new GrammarManager(join(homedir(), ".deja", "grammars"))
+    : undefined;
+
+  const pipeline = new Pipeline(db, settings, log, grammarManager);
 
   const walEvents = drainWal(paths.pendingWal, paths.walLock, log);
   if (walEvents.length > 0) {
@@ -37,7 +44,7 @@ function main(): void {
     for (const eventJson of walEvents) {
       try {
         const payload = JSON.parse(eventJson) as HookPayload;
-        pipeline.processEvent(payload, defaultBatch);
+        await pipeline.processEvent(payload, defaultBatch);
       } catch (err) {
         log("error", "worker", `Failed to process WAL event: ${err}`);
       }
@@ -45,11 +52,9 @@ function main(): void {
   }
 
   const debouncer = new Debouncer(settings.debounce_ms, (payload, batch) => {
-    try {
-      pipeline.processEvent(payload, batch);
-    } catch (err) {
+    pipeline.processEvent(payload, batch).catch((err) => {
       log("error", "worker", `Pipeline error: ${err}`);
-    }
+    });
   });
 
   let idleTimer: ReturnType<typeof setTimeout>;
@@ -110,4 +115,7 @@ function main(): void {
   process.on("SIGHUP", shutdown);
 }
 
-main();
+main().catch((err) => {
+  console.error("Worker startup failed:", err);
+  process.exit(1);
+});

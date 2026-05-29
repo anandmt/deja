@@ -62,6 +62,7 @@ export async function extractAst(
   } catch {
     return null;
   }
+  if (!tree) return null;
 
   const symbols: string[] = [];
   const root = tree.rootNode;

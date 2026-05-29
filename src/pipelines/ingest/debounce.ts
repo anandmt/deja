@@ -1,6 +1,6 @@
 import type { HookPayload, BatchAnnotation } from "../../types";
 
-type EmitFn = (payload: HookPayload, batch: BatchAnnotation) => void;
+type EmitFn = (payload: HookPayload, batch: BatchAnnotation) => void | Promise<void>;
 
 interface SessionBuffer {
   events: HookPayload[];

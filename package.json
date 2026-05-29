@@ -1,6 +1,6 @@
 {
   "name": "@anandt/deja",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Claude Code forgets everything between sessions. deja fixes that.",
   "type": "module",
   "main": "dist/worker/main.js",

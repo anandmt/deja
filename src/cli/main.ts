@@ -40,7 +40,7 @@ switch (command) {
     install();
     cleanupLegacy(process.cwd());
     console.log(`
-+- d e j a ------------------------------------+
++- d e j a -------------------------------------+
 |                                               |
 |  Installed successfully.                      |
 |  Start a new Claude Code session to begin.    |

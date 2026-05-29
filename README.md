@@ -49,10 +49,10 @@ deja install
 That's it. Bun is auto-installed if missing. Start a new Claude Code session and you'll see:
 
 ```
-+- d e j a ---------------------------------+
++- d e j a ----------------------------------+
 |                                            |
 |  > 142 memories :: 12 sessions :: 3h ago   |
-|  > Dashboard :: http://localhost:19533      |
+|  > Dashboard :: http://localhost:19533     |
 |                                            |
 +--------------------------------------------+
 ```

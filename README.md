@@ -45,7 +45,7 @@
 Every time you start a new Claude Code session, it starts from scratch:
 
 > **You:** "We decided last week to use Postgres for the queue."
-> **Claude:** "I don't have context from previous sessions."
+> **Claude:** "I don't have any context from previous sessions."
 
 **deja gives Claude a memory.** It silently observes your sessions — files touched, commands run, decisions made — and feeds the most relevant context back at the start of every new session.
 
